@@ -19,10 +19,11 @@ class User extends Authenticatable
         'google_id',
         'name',
         'email',
+        'nip',
+        'prodi',
         'initial',
         'role',
         'avatar',
-        'password',
     ];
 
     public function checkouts()

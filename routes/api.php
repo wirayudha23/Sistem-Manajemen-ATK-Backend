@@ -31,13 +31,14 @@ Route::apiResource('checkout-carts', CheckoutCartController::class);
 
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('products', ProductController::class);
+Route::apiResource('units', UnitController::class);
 // Route::apiResource('product-received', ProductReceivedController::class);
 
 //middleware
 Route::middleware('auth:sanctum')->group(function () {
     // Route::apiResource('categories', CategoryController::class)->middleware('role:baak');
     Route::apiResource('users', UserController::class)->middleware('role:kepala baak,baak');
-    Route::apiResource('units', UnitController::class)->middleware('role:baak');
+    // Route::apiResource('units', UnitController::class)->middleware('role:baak');
     // Route::apiResource('products', ProductController::class)->middleware('role:baak');
 
 

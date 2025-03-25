@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Log;
 
 class UserController extends Controller
 {
@@ -51,9 +52,11 @@ class UserController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'google_id' => 'nullable|string',
-                'name' => 'required|string',
+                'name' => 'required|string|unique:users,name',
                 'email' => 'required|email|unique:users,email',
-                'initial' => 'required|string|max:3',
+                'nip' => 'required|digits:6|integer|unique:users,nip',
+                'prodi' => 'required|string',
+                'initial' => 'required|string|unique:users,initial|size:3|alpha',
                 'role' => 'required|string|in:dosen',
                 'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             ]);
@@ -70,6 +73,8 @@ class UserController extends Controller
                 'google_id' => null,
                 'name' => $request->name,
                 'email' => $request->email,
+                'nip' => $request->nip,
+                'prodi' => $request->prodi,
                 'initial' => $request->initial,
                 'role' => $request->role,
                 'avatar' => null
@@ -135,7 +140,11 @@ class UserController extends Controller
             if ($currentUser->role == 'baak') {
                 $rules = [
                     'name' => 'sometimes|string',
-                    'initial' => 'sometimes|string|max:3'
+                    'email' => 'sometimes|email',
+                    'nip' => 'sometimes|string',
+                    'prodi' => 'sometimes|string',
+                    'initial' => 'sometimes|string|max:3',
+                    'avatar' => 'sometimes|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 ];
             } elseif ($currentUser->role == 'kepala baak') {
                 $rules = ['role' => 'required|string|in:kepala baak,baak,dosen'];
@@ -160,7 +169,11 @@ class UserController extends Controller
             if ($currentUser->role == 'baak') {
                 $user->update([
                     'name' => $request->name ?? $user->name,
-                    'initial' => $request->initial ?? $user->initial
+                    'email' => $request->email ?? $user->email,
+                    'nip' => $request->nip ?? $user->nip,
+                    'prodi' => $request->prodi ?? $user->prodi,
+                    'initial' => $request->initial ?? $user->initial,
+                    'avatar' => $request->avatar ?? $user->avatar,
                 ]);
             } elseif ($currentUser->role == 'kepala baak') {
                 $user->update(['role' => $request->role]);
@@ -191,9 +204,10 @@ class UserController extends Controller
                 'message' => 'User deleted successfully',
             ], 200);
         } catch (\Exception $e) {
+            Log::error($e->getMessage());
             return response()->json([
                 'status' => 'error',
-                'message' => 'Internal server error',
+                'message' => 'Internal server error' . $e->getMessage(),
             ], 500);
         }
     }
