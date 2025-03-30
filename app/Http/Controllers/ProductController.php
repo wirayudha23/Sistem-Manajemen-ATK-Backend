@@ -143,19 +143,19 @@ class ProductController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'name' => 'sometimes|string|unique:products,name',
-                'price' => 'sometimes|integer',
-                'stock' => 'sometimes|integer',
-                // 'unit' => 'sometimes|string',
-                'image' => 'sometimes|image|mimes:png,jpg,jpeg',
+                'name' => 'required|string|unique:products,name',
+                'price' => 'required|integer',
+                'stock' => 'required|integer',
+                // 'unit' => 'required|string',
+                'image' => 'required|image|mimes:png,jpg,jpeg',
                 'category_id' => [
-                    'sometimes',
+                    'required',
                     Rule::exists('categories', 'id')->where(function ($query) {
                         $query->whereNotNull('id');
                     })
                 ],
                 'unit_id' => [
-                    'sometimes',
+                    'required',
                     Rule::exists('units', 'id')->where(function ($query) {
                         $query->whereNotNull('id');
                     })
@@ -180,12 +180,12 @@ class ProductController extends Controller
             }
 
             $product->update([
-                'name' => $request->name ?? $product->name,
-                'price' => $request->price ?? $product->price,
-                'stock' => $request->stock ?? $product->stock,
-                // 'unit' => $request->unit ?? $product->unit,
-                'category_id' => $request->category_id ?? $product->category_id,
-                'unit_id' => $request->unit_id ?? $product->unit_id,
+                'name' => $request->name,
+                'price' => $request->price,
+                'stock' => $request->stock,
+                // 'unit' => $request->unit,
+                'category_id' => $request->category_id,
+                'unit_id' => $request->unit_id,
             ]);
 
 
@@ -195,9 +195,15 @@ class ProductController extends Controller
                 'data' => $product->load('category:id,name'),
             ], 200);
         } catch (\Exception $e) {
+            Log::error('Error during update product: ' . $e->getMessage(), [
+                'exception' => $e,
+            ]);
             return response()->json([
                 'status' => 'error',
                 'message' => 'Internal server error',
+                Log::error('Error during update product: ' . $e->getMessage(), [
+                    'exception' => $e,
+                ])
             ], 500);
         }
     }
