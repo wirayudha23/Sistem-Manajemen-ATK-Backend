@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CheckoutExcelController;
 use App\Http\Controllers\SocialiteController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CategoryController;
@@ -32,6 +33,8 @@ Route::apiResource('checkout-carts', CheckoutCartController::class);
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('products', ProductController::class);
 Route::apiResource('units', UnitController::class);
+
+Route::get('/export-checkout', [CheckoutExcelController::class, 'export']);
 // Route::apiResource('product-received', ProductReceivedController::class);
 
 //middleware
