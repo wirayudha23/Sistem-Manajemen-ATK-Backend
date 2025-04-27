@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Exports\CheckoutExport;
+use App\Imports\CheckoutImport;
 use Maatwebsite\Excel\Facades\Excel;
 
 class CheckoutExcelController extends Controller
@@ -31,6 +32,29 @@ class CheckoutExcelController extends Controller
             return response()->json([
                 'message' => 'Error exporting data: ' . $e->getMessage(),
                 'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls',
+        ]);
+        try {
+            $import = new CheckoutImport();
+            Excel::import($import, $request->file('file'));
+
+            return response()->json([
+                'message' => 'Data imported successfully.',
+                'errors' => $import->errors,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Import error: ' . $e->getMessage());
+            $errorMessage = explode("\n", $e->getMessage());
+            return response()->json([
+                'message' => 'Import Data Pengambilan ATK Gagal',
+                'error' => $errorMessage,
             ], 500);
         }
     }

@@ -27,45 +27,212 @@ class DatabaseSeeder extends Seeder
         //     'email' => 'test@example.com',
         // ]);
 
-        $category1 = Category::create([
+        $alatTulis = Category::create([
             'name' => 'Alat Tulis',
         ]);
 
-        $category2 = Category::create([
+        $kertas = Category::create([
             'name' => 'Kertas',
         ]);
 
-        $unit1 = Unit::create([
-            'name' => 'Box',
+        $buku = Category::create([
+            'name' => 'Buku',
         ]);
 
-        $unit2 = Unit::create([
+        $map = Category::create([
+            'name' => 'Map',
+        ]);
+
+        $plastik = Category::create([
+            'name' => 'Plastik'
+        ]);
+
+        $stickyNote = Category::create([
+            'name' => 'Sticky Note'
+        ]);
+
+        $isolasi = Category::create([
+            'name' => 'Isolasi'
+        ]);
+
+        $dll = Category::create([
+            'name' => 'Dll'
+        ]);
+
+        $rim = Unit::create([
             'name' => 'Rim',
         ]);
 
+        $pcs = Unit::create([
+            'name' => 'Pcs',
+        ]);
+
         $product1 = Product::create([
-            'name' => 'Pena',
-            'price' => 10000,
-            'stock' => 10,
+            'name' => 'Kertas A4',
+            'price' => 230000,
+            'stock' => 100,
             'image' => 'product1.jpg',
-            'category_id' => $category1->id,
-            'unit_id' => $unit1->id,
+            'category_id' => $kertas->id,
+            'unit_id' => $rim->id,
         ]);
 
         $product2 = Product::create([
-            'name' => 'Kertas A4',
-            'price' => 230000,
-            'stock' => 20,
+            'name' => 'Buku 3/4 Folio',
+            'price' => 13000,
+            'stock' => 100,
             'image' => 'product2.jpg',
-            'category_id' => $category2->id,
-            'unit_id' => $unit2->id,
+            'category_id' => $buku->id,
+            'unit_id' => $pcs->id,
+        ]);
+
+        $product3 = Product::create([
+            'name' => 'Map Bantex',
+            'price' => '933000',
+            'stock' => 100,
+            'image' => 'product3.jpg',
+            'category_id' => $map->id,
+            'unit_id' => $pcs->id,
+        ]);
+
+        $product4 = Product::create([
+            'name' => 'Pena Snowman Hitam',
+            'price' => '3000',
+            'stock' => 100,
+            'image' => 'product3.jpg',
+            'category_id' => $alatTulis->id,
+            'unit_id' => $pcs->id,
+        ]);
+
+        $product5 = Product::create([
+            'name' => 'Pena Snowman Merah',
+            'price' => '3000',
+            'stock' => 100,
+            'image' => 'product3.jpg',
+            'category_id' => $alatTulis->id,
+            'unit_id' => $pcs->id,
+        ]);
+
+        $product6 = Product::create([
+            'name' => 'Pena Snowman Biru',
+            'price' => '3000',
+            'stock' => 100,
+            'image' => 'product3.jpg',
+            'category_id' => $alatTulis->id,
+            'unit_id' => $pcs->id,
+        ]);
+
+        $product7 = Product::create([
+            'name' => 'Spidol Merah',
+            'price' => '8500',
+            'stock' => 100,
+            'image' => 'product3.jpg',
+            'category_id' => $alatTulis->id,
+            'unit_id' => $pcs->id,
+        ]);
+
+        $product8 = Product::create([
+            'name' => 'Spidol Hitam',
+            'price' => '8500',
+            'stock' => 100,
+            'image' => 'product3.jpg',
+            'category_id' => $alatTulis->id,
+            'unit_id' => $pcs->id,
+        ]);
+
+        $product9 = Product::create([
+            'name' => 'Spidol Biru',
+            'price' => '8500',
+            'stock' => 100,
+            'image' => 'product3.jpg',
+            'category_id' => $alatTulis->id,
+            'unit_id' => $pcs->id,
+        ]);
+
+        $product10 = Product::create([
+            'name' => 'Buku Folio F4',
+            'price' => '80000',
+            'stock' => 100,
+            'image' => 'product3.jpg',
+            'category_id' => $buku->id,
+            'unit_id' => $pcs->id,
+        ]);
+
+        $product11 = Product::create([
+            'name' => 'Plastik PO',
+            'price' => '30000',
+            'stock' => 100,
+            'image' => 'product3.jpg',
+            'category_id' => $plastik->id,
+            'unit_id' => $pcs->id,
+        ]);
+
+        $product12 = Product::create([
+            'name' => 'Sticky Note',
+            'price' => '15000',
+            'stock' => 100,
+            'image' => 'product3.jpg',
+            'category_id' => $stickyNote->id,
+            'unit_id' => $pcs->id,
+        ]);
+
+        $product13 = Product::create([
+            'name' => 'Isolasi Kertas',
+            'price' => '15000',
+            'stock' => 100,
+            'image' => 'product3.jpg',
+            'category_id' => $isolasi->id,
+            'unit_id' => $pcs->id,
+        ]);
+
+        $product14 = Product::create([
+            'name' => 'Isolasi Kertas',
+            'price' => '15000',
+            'stock' => 100,
+            'image' => 'product3.jpg',
+            'category_id' => $isolasi->id,
+            'unit_id' => $pcs->id,
+        ]);
+
+        $product15 = Product::create([
+            'name' => 'Gantungan Kunci',
+            'price' => '37000',
+            'stock' => 100,
+            'image' => 'product3.jpg',
+            'category_id' => $dll->id,
+            'unit_id' => $pcs->id,
+        ]);
+
+        $product16 = Product::create([
+            'name' => 'Kertas A3 100gr',
+            'price' => '161000',
+            'stock' => 100,
+            'image' => 'product3.jpg',
+            'category_id' => $kertas->id,
+            'unit_id' => $rim->id,
+        ]);
+
+        $product17 = Product::create([
+            'name' => 'Kertas A4 100gr',
+            'price' => '90000',
+            'stock' => 100,
+            'image' => 'product3.jpg',
+            'category_id' => $kertas->id,
+            'unit_id' => $rim->id,
+        ]);
+
+        $studyProgram1 = \App\Models\StudyProgram::create([
+            'name' => 'Teknik Informatika',
+        ]);
+        $studyProgram2 = \App\Models\StudyProgram::create([
+            'name' => 'Sistem Informasi',
         ]);
 
         $user1 = User::create([
             'name' => 'Dosen Wirayudha',
             'email' => 'userdosen1@gmail.com',
             'nip' => '123456',
-            'prodi' => 'Sistem Informasi',
+            'position' => 'Dosen',
+            'study_program_id' => $studyProgram2->id,
             'initial' => 'WYD',
             'role' => 'dosen',
         ]);

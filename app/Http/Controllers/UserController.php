@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Log;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -55,10 +56,16 @@ class UserController extends Controller
                 'name' => 'required|string|unique:users,name',
                 'email' => 'required|email|unique:users,email',
                 'nip' => 'required|digits:6|integer|unique:users,nip',
-                'prodi' => 'required|string',
+                'position' => 'required|string|in:Dosen,Non Dosen',
                 'initial' => 'required|string|unique:users,initial|size:3|alpha',
-                'role' => 'required|string|in:dosen',
+                'role' => 'required|string|in:BAAK,Dosen',
                 'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'study_program_id' => [
+                    'nullable',
+                    Rule::exists('study_programs', 'id')->where(function ($query) {
+                        $query->whereNotNull('id');
+                    })
+                ]
             ]);
 
             if ($validator->fails()) {
@@ -69,12 +76,25 @@ class UserController extends Controller
                 ], 400);
             }
 
+            $studyProgramId = null;
+            if ($request->position == 'Dosen') {
+                $studyProgramId = $request->study_program_id;
+            } else if ($request->position == 'Non Dosen') {
+                $studyProgramId = null;
+            } else {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid position',
+                ], 400);
+            }
+
             $user = User::create([
                 'google_id' => null,
                 'name' => $request->name,
                 'email' => $request->email,
                 'nip' => $request->nip,
-                'prodi' => $request->prodi,
+                'position' => $request->position,
+                'study_program_id' => $studyProgramId,
                 'initial' => $request->initial,
                 'role' => $request->role,
                 'avatar' => null

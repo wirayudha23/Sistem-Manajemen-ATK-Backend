@@ -17,13 +17,20 @@ return new class extends Migration
             $table->string('name')->unique();
             $table->string('email')->unique();
             $table->integer('nip')->unique()->nullable();
-            $table->string('prodi')->nullable();
+            $table->string('position')->nullable();
             $table->string('initial')->unique()->nullable();
             $table->string('role');
             $table->string('avatar')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
+
+            $table->uuid('study_program_id')->nullable();
+
+            $table->foreign('study_program_id')
+                ->references('id')
+                ->on('study_programs')
+                ->onDelete('cascade');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

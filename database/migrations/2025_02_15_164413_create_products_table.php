@@ -27,13 +27,13 @@ return new class extends Migration {
 
             $table->foreign('category_id')
                 ->references('id')
-                ->on('categories')
-                ->onDelete('cascade');
+                ->on('categories');
+                // ->onDelete('cascade');
 
             $table->foreign('unit_id')
                 ->references('id')
-                ->on('units')
-                ->onDelete('cascade');
+                ->on('units');
+                // ->onDelete('cascade');
         });
     }
 

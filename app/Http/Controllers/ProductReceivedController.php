@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FundTransaction;
 use App\Models\Reorder;
 use App\Models\ReorderDetail;
 use App\Models\Product;
@@ -60,6 +61,7 @@ class ProductReceivedController extends Controller
                 'products' => 'required|array',
                 'products.*.product_id' => 'required|uuid|exists:products,id',
                 'products.*.received_quantity' => 'required|integer|min:0',
+                'products.*.price' => 'required|integer|min:0',
             ]);
 
             $reorder = Reorder::findOrFail($validated['reorder_id']);
@@ -77,6 +79,7 @@ class ProductReceivedController extends Controller
 
             DB::beginTransaction();
 
+            // 1) Buat ProductReceived
             $productReceived = new ProductReceived();
             $productReceived->id = (string) Str::uuid();
             $productReceived->reorder_id = $reorder->id;
@@ -87,6 +90,7 @@ class ProductReceivedController extends Controller
 
             $totalReceivedPrice = 0;
 
+            // 2) Proses setiap produk detail
             foreach ($validated['products'] as $prod) {
                 $reorderDetail = ReorderDetail::where('reorder_id', $reorder->id)
                     ->where('product_id', $prod['product_id'])
@@ -100,19 +104,19 @@ class ProductReceivedController extends Controller
                     throw new \Exception("Received quantity untuk produk {$prod['product_id']} melebihi jumlah yang dipesan.");
                 }
 
-                $totalProductPrice = $prod['received_quantity'] * $reorderDetail->original_price;
-
+                $totalProductPrice = $prod['received_quantity'] * $prod['price'];
 
                 $prd = new ProductReceivedDetail();
                 $prd->id = (string) Str::uuid();
                 $prd->product_received_id = $productReceived->id;
                 $prd->product_id = $prod['product_id'];
                 $prd->received_quantity = $prod['received_quantity'];
-                $prd->price = $reorderDetail->original_price;
+                $prd->price = $prod['price'];
                 $prd->total_product_price = $totalProductPrice;
                 $prd->save();
                 Log::info('Record product_received_detail berhasil dibuat.', ['productReceivedDetail' => $prd]);
 
+                // Update stock produk
                 $product = Product::findOrFail($prod['product_id']);
                 $product->stock += $prod['received_quantity'];
                 $product->save();
@@ -121,19 +125,166 @@ class ProductReceivedController extends Controller
                 $totalReceivedPrice += $totalProductPrice;
             }
 
+            // 3) Update total_received_price dan simpan
             $productReceived->total_received_price = $totalReceivedPrice;
             $productReceived->save();
+
+            // 4) Catat dana keluar di fund_transactions
+            FundTransaction::create([
+                'id' => (string) Str::uuid(),
+                'date' => now(),
+                'type' => 'out',
+                'amount' => $totalReceivedPrice,
+                'product_received_id' => $productReceived->id,
+            ]);
+            Log::info('Fund transaction (out) berhasil dibuat.', ['amount' => $totalReceivedPrice, 'product_received_id' => $productReceived->id]);
 
             DB::commit();
 
             return response()->json([
                 'message' => 'Product received berhasil disimpan.'
             ], 200);
+
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error menyimpan product received: ' . $e->getMessage(), [
                 'exception' => $e,
             ]);
+
+            return response()->json([
+                'message' => 'Terjadi error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function show($id)
+    {
+        try {
+            $productReceived = ProductReceived::with('reorder', 'productReceivedDetails.product')->findOrFail($id);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Product received fetched successfully',
+                'data' => $productReceived,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Internal server error',
+            ], 500);
+        }
+    }
+
+    public function update(Request $request, string $id)
+    {
+        // Validasi input
+        $validated = $request->validate([
+            'received_date' => 'required|date_format:d-m-Y',
+            'products' => 'required|array',
+            'products.*.product_id' => 'required|uuid|exists:products,id',
+            'products.*.received_quantity' => 'required|integer|min:0',
+            'products.*.price' => 'required|integer|min:0',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // 1) Ambil record ProductReceived beserta detail lama
+            $pr = ProductReceived::with('details')->findOrFail($id);
+
+            // Map old quantities per product
+            $oldDetails = $pr->details;
+            $oldQtyMap = $oldDetails->pluck('received_quantity', 'product_id')->toArray();
+
+            // 2) Update field received_date
+            $pr->received_date = Carbon::createFromFormat('d-m-Y', $validated['received_date'])
+                ->format('Y-m-d');
+            $pr->total_received_price = 0; // akan dihitung ulang
+            $pr->save();
+
+            $newTotal = 0;
+            $newProductIds = collect($validated['products'])->pluck('product_id')->all();
+
+            // 3) Hapus detail yang tidak ada di update baru & rollback stock
+            foreach ($oldDetails as $oldDetail) {
+                if (!in_array($oldDetail->product_id, $newProductIds)) {
+                    // Kurangi stock lama
+                    $prod = Product::findOrFail($oldDetail->product_id);
+                    $prod->stock -= $oldDetail->received_quantity;
+                    $prod->save();
+
+                    // Hapus detail
+                    $oldDetail->delete();
+                }
+            }
+
+            // 4) Loop produk baru: update/insert detail + adjust stock
+            foreach ($validated['products'] as $item) {
+                $pid = $item['product_id'];
+                $qty = $item['received_quantity'];
+                $price = $item['price'];
+                $lineTotal = $qty * $price;
+
+                // Hitung selisih stock: new - old
+                $oldQty = $oldQtyMap[$pid] ?? 0;
+                $diff = $qty - $oldQty;
+
+                // Update atau buat detail baru
+                $detail = $pr->details()->where('product_id', $pid)->first();
+                if ($detail) {
+                    $detail->received_quantity = $qty;
+                    $detail->price = $price;
+                    $detail->total_product_price = $lineTotal;
+                    $detail->save();
+                } else {
+                    $detail = new ProductReceivedDetail();
+                    $detail->id = (string) Str::uuid();
+                    $detail->product_received_id = $pr->id;
+                    $detail->product_id = $pid;
+                    $detail->received_quantity = $qty;
+                    $detail->price = $price;
+                    $detail->total_product_price = $lineTotal;
+                    $detail->save();
+                }
+
+                // Update stock produk
+                $product = Product::findOrFail($pid);
+                $product->stock += $diff;
+                $product->save();
+
+                $newTotal += $lineTotal;
+            }
+
+            // 5) Update total_received_price
+            $pr->total_received_price = $newTotal;
+            $pr->save();
+
+            // 6) Update fund transaction (type = 'out') terkait
+            $fundOut = FundTransaction::where('product_received_id', $pr->id)
+                ->where('type', 'out')->first();
+            if ($fundOut) {
+                $fundOut->amount = $newTotal;
+                $fundOut->date = now();
+                $fundOut->save();
+            } else {
+                // Fallback: buat record baru jika belum ada
+                FundTransaction::create([
+                    'id' => (string) Str::uuid(),
+                    'date' => now(),
+                    'type' => 'out',
+                    'amount' => $newTotal,
+                    'product_received_id' => $pr->id,
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'ProductReceived dan FundTransaction berhasil diperbarui.'
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error updating ProductReceived: ' . $e->getMessage(), ['exception' => $e]);
 
             return response()->json([
                 'message' => 'Terjadi error: ' . $e->getMessage()

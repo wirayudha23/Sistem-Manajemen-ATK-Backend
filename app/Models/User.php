@@ -20,7 +20,8 @@ class User extends Authenticatable
         'name',
         'email',
         'nip',
-        'prodi',
+        'position',
+        'study_program_id',
         'initial',
         'role',
         'avatar',
@@ -29,6 +30,11 @@ class User extends Authenticatable
     public function checkouts()
     {
         return $this->hasMany(Checkout::class);
+    }
+
+    public function studyProgram()
+    {
+        return $this->belongsTo(StudyProgram::class, 'study_program_id');
     }
 
     public $incrementing = false;

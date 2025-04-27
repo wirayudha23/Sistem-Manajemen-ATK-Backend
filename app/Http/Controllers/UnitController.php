@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class UnitController extends Controller
 {
@@ -49,6 +50,12 @@ class UnitController extends Controller
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|unique:units,name'
             ]);
+
+            $validator->after(function ($validator) use ($request) {
+                if (Unit::whereRaw('LOWER(name) = ?', [strtolower($request->name)])->exists()) {
+                    $validator->errors()->add('name', 'The name has already been taken.');
+                }
+            });
 
             if ($validator->fails()) {
                 return response()->json([
@@ -113,7 +120,9 @@ class UnitController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'name' => 'required|string|unique:units,name,' . $unit_id
+                'name' => 'sometimes',
+                'string',
+                Rule::unique('units','name')->ignore($unit->id)
             ]);
 
             if ($validator->fails()) {

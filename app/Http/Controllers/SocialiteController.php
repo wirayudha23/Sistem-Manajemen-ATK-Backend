@@ -11,7 +11,7 @@ class SocialiteController extends Controller
 {
     public function redirect()
     {
-        return Socialite::driver('google')->redirect();
+        return Socialite::driver('google')->stateless()->redirect();
     }
 
     public function callback()
@@ -19,7 +19,7 @@ class SocialiteController extends Controller
         $userFromGoogle = Socialite::driver('google')->stateless()->user();
         $email = $userFromGoogle->getEmail();
 
-        if (!str_ends_with($email, '@gmail.com')) {
+        if (!str_ends_with($email, '@mahasiswa.pcr.ac.id')) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Unauthorized',
@@ -35,7 +35,7 @@ class SocialiteController extends Controller
             $userFromDb->avatar = $userFromGoogle->getAvatar();
             $userFromDb->email = $email;
             $userFromDb->name = $userFromGoogle->getName();
-            $userFromDb->role = 'baak';
+            $userFromDb->role = 'BAAK';
             $userFromDb->save();
         }
 

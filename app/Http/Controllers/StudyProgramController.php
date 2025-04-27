@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
 use Illuminate\Http\Request;
+use App\Models\StudyProgram;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 
-class CategoryController extends Controller
+class StudyProgramController extends Controller
 {
     public function index(Request $request)
     {
@@ -19,7 +18,7 @@ class CategoryController extends Controller
             $search = $request->get('search', '');
             $search_column = $request->get('search_column', 'name');
 
-            $query = Category::query();
+            $query = StudyProgram::query();
 
             if ($search_column && $search) {
                 $query->where($search_column, 'like', '%' . $search . '%');
@@ -28,14 +27,13 @@ class CategoryController extends Controller
                     ->where('name', 'like', '%' . $search . '%');
             }
 
-            $categories = $query
+            $studyPrograms = $query
                 ->orderBy($sort_column, $sort_type)
                 ->paginate($limit, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Categories fetched successfully',
-                'data' => $categories,
+                'data' => $studyPrograms,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -49,11 +47,11 @@ class CategoryController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'name' => 'required|string|unique:categories,name'
+                'name' => 'required|string|unique:study_programs,name',
             ]);
 
             $validator->after(function ($validator) use ($request) {
-                if (Category::whereRaw('LOWER(name) = ?', [strtolower($request->name)])->exists()) {
+                if (StudyProgram::whereRaw('LOWER(name) = ?', [strtolower($request->name)])->exists()) {
                     $validator->errors()->add('name', 'The name has already been taken.');
                 }
             });
@@ -61,19 +59,18 @@ class CategoryController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Validation error',
-                    'errors' => $validator->errors(),
-                ], 400);
+                    'message' => $validator->errors(),
+                ], 422);
             }
 
-            $category = Category::create([
-                'name' => $request->name
+            $studyProgram = StudyProgram::create([
+                'name' => $request->name,
             ]);
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Category created successfully',
-                'data' => $category,
+                'message' => 'Study program created successfully',
+                'data' => $studyProgram,
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
@@ -83,22 +80,14 @@ class CategoryController extends Controller
         }
     }
 
-    public function show($category_id)
+    public function show($id)
     {
         try {
-            $category = Category::find($category_id);
-
-            if (!$category) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Category not found',
-                ], 404);
-            }
+            $studyProgram = StudyProgram::findOrFail($id);
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Category fetched successfully',
-                'data' => $category,
+                'data' => $studyProgram,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -108,40 +97,29 @@ class CategoryController extends Controller
         }
     }
 
-    public function update(Request $request, $category_id)
+    public function update(Request $request, $id)
     {
         try {
-            $category = Category::find($category_id);
-
-            if (!$category) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Category not found',
-                ], 404);
-            }
-
             $validator = Validator::make($request->all(), [
-                'name' => 'sometimes',
-                'string',
-                Rule::unique('categories','name')->ignore($category->id)
+                'name' => 'required|string|unique:study_programs,name,' . $id,
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Validation error',
-                    'errors' => $validator->errors(),
-                ], 400);
+                    'message' => $validator->errors(),
+                ], 422);
             }
 
-            $category->update([
-                'name' => $request->name ?? $category->name
+            $studyProgram = StudyProgram::findOrFail($id);
+            $studyProgram->update([
+                'name' => $request->name,
             ]);
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Category updated successfully',
-                'data' => $category,
+                'message' => 'Study program updated successfully',
+                'data' => $studyProgram,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -151,14 +129,15 @@ class CategoryController extends Controller
         }
     }
 
-    public function destroy(Category $category)
+    public function destroy($id)
     {
         try {
-            $category->delete();
+            $studyProgram = StudyProgram::findOrFail($id);
+            $studyProgram->delete();
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Category deleted successfully',
+                'message' => 'Study program deleted successfully',
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
