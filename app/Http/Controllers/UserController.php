@@ -51,14 +51,16 @@ class UserController extends Controller
     public function store(Request $request)
     {
         try {
+            $position = $request->input('position');
+
             $validator = Validator::make($request->all(), [
                 'google_id' => 'nullable|string',
                 'name' => 'required|string|unique:users,name',
                 'email' => 'required|email|unique:users,email',
                 'nip' => 'required|digits:6|integer|unique:users,nip',
-                'position' => 'required|string|in:Dosen,Non Dosen',
+                'position' => 'required|string|in:Dosen,Tendik,Rumah Tangga',
                 'initial' => 'required|string|unique:users,initial|size:3|alpha',
-                'role' => 'required|string|in:BAAK,Dosen',
+                'role' => 'required|string|in:Kabag,BAAK,Staff',
                 'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 'study_program_id' => [
                     'nullable',
@@ -68,25 +70,37 @@ class UserController extends Controller
                 ]
             ]);
 
+            $validator->after(function ($validator) use ($request, $position) {
+                // Role enforcement per position
+                if ($position === 'Dosen') {
+                    if ($request->role !== 'Staff') {
+                        $validator->errors()->add('role', 'For Dosen position, role must be Staff.');
+                    }
+                    if (empty($request->study_program_id)) {
+                        $validator->errors()->add('study_program_id', 'Study program is required for Dosen.');
+                    }
+                } elseif ($position === 'Tendik') {
+                    if ($request->role !== 'BAAK') {
+                        $validator->errors()->add('role', 'For Tendik position, role must be BAAK.');
+                    }
+                    // study_program_id will be ignored and set to null, no validation error
+                } elseif ($position === 'Rumah Tangga') {
+                    if ($request->role !== 'Staff') {
+                        $validator->errors()->add('role', 'For Rumah Tangga position, role must be Staff.');
+                    }
+                    // study_program_id will be ignored and set to null, no validation error
+                }
+            });
+
             if ($validator->fails()) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Validation error',
                     'errors' => $validator->errors(),
-                ], 400);
+                ], 422);
             }
 
-            $studyProgramId = null;
-            if ($request->position == 'Dosen') {
-                $studyProgramId = $request->study_program_id;
-            } else if ($request->position == 'Non Dosen') {
-                $studyProgramId = null;
-            } else {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Invalid position',
-                ], 400);
-            }
+            $studyProgramId = $position === 'Dosen' ? $request->study_program_id : null;
 
             $user = User::create([
                 'google_id' => null,
@@ -135,7 +149,6 @@ class UserController extends Controller
             ], 500);
         }
     }
-
     public function update(Request $request, User $user)
     {
         try {
@@ -155,19 +168,126 @@ class UserController extends Controller
                 ], 404);
             }
 
-            // Validasi berdasarkan role
-            $rules = [];
-            if ($currentUser->role == 'baak') {
+            // Update actions based on current user's role
+            if ($currentUser->role === 'Kabag') {
+                // Kabag can only update another BAAK's role to Kabag
+                if ($currentUser->id === $user->id) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Kabag cannot change their own role',
+                    ], 403);
+                }
+
+                if ($user->role !== 'BAAK') {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Only users with role BAAK can be promoted',
+                    ], 400);
+                }
+
+                $newRole = $request->input('role');
+                if ($newRole !== 'Kabag') {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Role must be Kabag',
+                    ], 400);
+                }
+
+                // Promote target and demote current
+
+                // Use transaction to ensure atomicity
+                \DB::transaction(function () use ($user, $currentUser) {
+                    // Promote target to Kabag
+                    $user->update(['role' => 'Kabag']);
+
+                    // Demote current Kabag to Staff
+                    $currentUser->update(['role' => 'Staff']);
+                });
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'User role updated and current Kabag demoted',
+                    'data' => $user,
+                ], 200);
+
+            } elseif ($currentUser->role === 'BAAK') {
+                // BAAK can update profile fields and role
+                // Build validation rules (similar to store)
                 $rules = [
-                    'name' => 'sometimes|string',
-                    'email' => 'sometimes|email',
-                    'nip' => 'sometimes|string',
-                    'prodi' => 'sometimes|string',
-                    'initial' => 'sometimes|string|max:3',
-                    'avatar' => 'sometimes|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                    'name' => ['sometimes', 'string', Rule::unique('users', 'name')->ignore($user->id)],
+                    'email' => ['sometimes', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+                    'nip' => ['sometimes', 'digits:6', 'integer', Rule::unique('users', 'nip')->ignore($user->id)],
+                    'position' => ['sometimes', 'string', 'in:Dosen,Tendik,Rumah Tangga'],
+                    'initial' => ['sometimes', 'string', 'size:3', 'alpha', Rule::unique('users', 'initial')->ignore($user->id)],
+                    'avatar' => ['sometimes', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
+                    'study_program_id' => ['nullable', Rule::exists('study_programs', 'id')],
+                    'role' => ['sometimes', 'string'],
                 ];
-            } elseif ($currentUser->role == 'kepala baak') {
-                $rules = ['role' => 'required|string|in:kepala baak,baak,dosen'];
+
+                $validator = Validator::make($request->all(), $rules);
+
+                // Conditional validation for position-role-prodi
+                $validator->after(function ($validator) use ($request) {
+                    $pos = $request->input('position', $request->user()->position);
+                    $role = $request->input('role', $request->user()->role);
+
+                    if ($request->has('position') || $request->has('role') || $request->has('study_program_id')) {
+                        // Dosen
+                        if ($pos === 'Dosen') {
+                            if ($role !== 'Staff') {
+                                $validator->errors()->add('role', 'For Dosen position, role must be Staff.');
+                            }
+                            if (!$request->filled('study_program_id')) {
+                                $validator->errors()->add('study_program_id', 'Study program is required for Dosen.');
+                            }
+                        }
+                        // Tendik
+                        elseif ($pos === 'Tendik') {
+                            if ($role !== 'BAAK') {
+                                $validator->errors()->add('role', 'For Tendik position, role must be BAAK.');
+                            }
+                        }
+                        // Rumah Tangga
+                        elseif ($pos === 'Rumah Tangga') {
+                            if ($role !== 'Staff') {
+                                $validator->errors()->add('role', 'For Rumah Tangga position, role must be Staff.');
+                            }
+                        }
+                    }
+                });
+
+                if ($validator->fails()) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Validation error',
+                        'errors' => $validator->errors(),
+                    ], 400);
+                }
+
+                // Determine updated values
+                $position = $request->input('position', $user->position);
+                $studyProgramId = $position === 'Dosen'
+                    ? $request->input('study_program_id', $user->study_program_id)
+                    : null;
+
+                // Perform update
+                $user->update([
+                    'name' => $request->input('name', $user->name),
+                    'email' => $request->input('email', $user->email),
+                    'nip' => $request->input('nip', $user->nip),
+                    'position' => $position,
+                    'study_program_id' => $studyProgramId,
+                    'initial' => $request->input('initial', $user->initial),
+                    'role' => $request->input('role', $user->role),
+                    'avatar' => $request->input('avatar', $user->avatar),
+                ]);
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'User updated successfully',
+                    'data' => $user,
+                ], 200);
+
             } else {
                 return response()->json([
                     'status' => 'error',
@@ -175,41 +295,11 @@ class UserController extends Controller
                 ], 403);
             }
 
-            $validator = Validator::make($request->all(), $rules);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Validation error',
-                    'errors' => $validator->errors(),
-                ], 400);
-            }
-
-            // Update berdasarkan role yang login
-            if ($currentUser->role == 'baak') {
-                $user->update([
-                    'name' => $request->name ?? $user->name,
-                    'email' => $request->email ?? $user->email,
-                    'nip' => $request->nip ?? $user->nip,
-                    'prodi' => $request->prodi ?? $user->prodi,
-                    'initial' => $request->initial ?? $user->initial,
-                    'avatar' => $request->avatar ?? $user->avatar,
-                ]);
-            } elseif ($currentUser->role == 'kepala baak') {
-                $user->update(['role' => $request->role]);
-            }
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'User updated successfully',
-                'data' => $user,
-            ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Internal server error',
-                'error' => $e->getMessage(), // Untuk debugging
+                'error' => $e->getMessage(),
             ], 500);
         }
     }

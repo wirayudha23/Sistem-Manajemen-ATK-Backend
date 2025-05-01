@@ -26,9 +26,14 @@ return Application::configure(basePath: dirname(__DIR__))
         \App\Console\Commands\UpdateInventoryMetrics::class,
     ])
     ->withSchedule(function (Schedule $schedule) {
-        $schedule->command('inventory:update-metrics')
-            ->dailyAt('00:00')
-            // ->yearlyOn(1, 1, '00:00')
-            ->timezone('Asia/Jakarta');
+        $schedule->command('inventory:update-monthly-metrics')
+        ->dailyAt('23:59')
+        ->when(function () {
+            return now()->endOfMonth()->isToday();
+        });
+        // ->timezone('Asia/Jakarta');
+
+        $schedule->command('inventory:update-yearly-metrics')
+        ->yearlyOn(12, 31, '23:59');
     })
     ->create();

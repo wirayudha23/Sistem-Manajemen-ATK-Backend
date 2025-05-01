@@ -16,36 +16,44 @@ class SocialiteController extends Controller
 
     public function callback()
     {
-        $userFromGoogle = Socialite::driver('google')->stateless()->user();
-        $email = $userFromGoogle->getEmail();
+        $googleUser = Socialite::driver('google')->stateless()->user();
+        $email = $googleUser->getEmail();
 
-        if (!str_ends_with($email, '@mahasiswa.pcr.ac.id')) {
+        // 1) Cek whitelist (email + role sudah diinput admin)
+        $user = User::where('email', $email)->first();
+        if (!$user) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unauthorized',
-                'errors' => ['email' => ['Only Gmail account is allowed']],
+                'message' => 'Unauthorized - Email not registered',
             ], 401);
         }
 
-        $userFromDb = User::where('email', $email)->first();
-
-        if (!$userFromDb) {
-            $userFromDb = new User();
-            $userFromDb->google_id = $userFromGoogle->getId();
-            $userFromDb->avatar = $userFromGoogle->getAvatar();
-            $userFromDb->email = $email;
-            $userFromDb->name = $userFromGoogle->getName();
-            $userFromDb->role = 'BAAK';
-            $userFromDb->save();
+        if ($user->role === 'Staff') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Maaf, Anda tidak memiliki akses untuk masuk ke sistem ini.',
+            ], 403);
         }
 
-        $token = $userFromDb->createToken('auth_token')->plainTextToken;
+        // 2) Update data Google (ID, name, avatar)
+        if (! $user->google_id) {
+            $user->google_id = $googleUser->getId();
+            $user->name = $googleUser->getName();
+            $user->avatar = $googleUser->getAvatar();
+        }
 
+        $user->save();
+
+        // 3) Issue Sanctum token
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        // 4) Return JSON (tersedia juga role untuk frontend)
         return response()->json([
             'status' => 'success',
             'message' => 'Login successful',
             'access_token' => $token,
-            'token_type' => 'Bearer'
+            'token_type' => 'Bearer',
+            'user' => $user,
         ], 200);
     }
 

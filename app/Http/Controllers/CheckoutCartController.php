@@ -21,7 +21,11 @@ class CheckoutCartController extends Controller
             $search = $request->get('search', '');
             $search_column = $request->get('search_column', 'name');
 
-            $query = CheckoutCart::query()->with('product:id,name,image,stock,unit');
+            $query = CheckoutCart::query()->with([
+                'product:id,name,image,stock,category_id,unit_id',
+                'product.category:id,name',
+                'product.unit:id,name'
+            ]);
 
             if ($search_column && $search) {
                 $query->where($search_column, 'like', '%' . $search . '%');
@@ -43,6 +47,7 @@ class CheckoutCartController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Internal server error',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
