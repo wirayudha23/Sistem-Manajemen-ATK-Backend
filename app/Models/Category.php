@@ -14,6 +14,11 @@ class Category extends Model
         'name'
     ];
 
+    public function setNameAttribute($value)
+    {
+        $this->attributes['name'] = Str::title(trim($value));
+    }
+
     public function products()
     {
         return $this->hasMany(Product::class);

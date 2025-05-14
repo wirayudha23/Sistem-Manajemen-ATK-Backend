@@ -6,6 +6,7 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
@@ -49,14 +50,15 @@ class CategoryController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'name' => 'required|string|unique:categories,name'
-            ]);
+                'name' => [
+                    'required',
+                    'string',
 
-            $validator->after(function ($validator) use ($request) {
-                if (Category::whereRaw('LOWER(name) = ?', [strtolower($request->name)])->exists()) {
-                    $validator->errors()->add('name', 'The name has already been taken.');
-                }
-            });
+                    Rule::unique('categories')->where(function ($query) use ($request) {
+                        $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
+                    }),
+                ],
+            ]);
 
             if ($validator->fails()) {
                 return response()->json([
@@ -66,8 +68,10 @@ class CategoryController extends Controller
                 ], 400);
             }
 
+            // $name = Str::title($request->name);
+
             $category = Category::create([
-                'name' => $request->name
+                'name' => $request->name,
             ]);
 
             return response()->json([
@@ -112,7 +116,6 @@ class CategoryController extends Controller
     {
         try {
             $category = Category::find($category_id);
-
             if (!$category) {
                 return response()->json([
                     'status' => 'error',
@@ -120,10 +123,19 @@ class CategoryController extends Controller
                 ], 404);
             }
 
+            // 1. Validasi
             $validator = Validator::make($request->all(), [
-                'name' => 'sometimes',
-                'string',
-                Rule::unique('categories','name')->ignore($category->id)
+                'name' => [
+                    'sometimes',
+                    'string',
+                    Rule::unique('categories', 'name')
+                        ->ignore($category->id, 'id')
+                        ->where(
+                            function ($query) use ($request) {
+                                $query->whereRaw('LOWER(name)=?', [strtolower($request->name)]);
+                            }
+                        ),
+                ],
             ]);
 
             if ($validator->fails()) {
@@ -134,15 +146,18 @@ class CategoryController extends Controller
                 ], 400);
             }
 
-            $category->update([
-                'name' => $request->name ?? $category->name
-            ]);
+            // 2. Ambil data yang tervalidasi (hanya 'name' kalau dikirim)
+            $data = $validator->validated();
+
+            // 3. Update mass‑assignment
+            $category->update($data);
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Category updated successfully',
                 'data' => $category,
             ], 200);
+
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
@@ -150,6 +165,7 @@ class CategoryController extends Controller
             ], 500);
         }
     }
+
 
     public function destroy(Category $category)
     {

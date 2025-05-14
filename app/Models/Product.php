@@ -28,6 +28,11 @@ class Product extends Model
         'reorder_point',
     ];
 
+    public function setNameAttribute($value)
+    {
+        $this->attributes['name'] = Str::title(trim($value));
+    }
+
     // protected $casts = [
     //     'economic_order_quantity' => 'decimal:2',
     //     'safety_stock' => 'decimal:2',

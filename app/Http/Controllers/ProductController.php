@@ -52,7 +52,13 @@ class ProductController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'name' => 'required|string|unique:products,name',
+                'name' => [
+                    'required',
+                    'string',
+                    Rule::unique('products', 'name')->where(function ($query) use ($request) {
+                        $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
+                    }),
+                ],
                 'price' => 'required|integer|min:0',
                 'stock' => 'required|integer|min:0',
                 'image' => 'required|image|mimes:png,jpg,jpeg|max:2048',
@@ -133,8 +139,8 @@ class ProductController extends Controller
     public function update(Request $request, $product_id)
     {
         try {
+            // 1. Cari product
             $product = Product::find($product_id);
-
             if (!$product) {
                 return response()->json([
                     'status' => 'error',
@@ -142,28 +148,26 @@ class ProductController extends Controller
                 ], 404);
             }
 
-            $validator = Validator::make($request->all(), [
+            // 2. Atur rules
+            $rules = [
                 'name' => [
                     'sometimes',
                     'string',
-                    'nullable',
-                    Rule::unique('products', 'name')->ignore($product_id),
+                    Rule::unique('products', 'name')
+                        ->ignore($product->id, 'id')
+                        ->where(function ($q) use ($request) {
+                            $q->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
+                        }),
                 ],
                 'price' => 'sometimes|integer|min:0',
                 'stock' => 'sometimes|integer|min:0',
                 'image' => 'sometimes|image|mimes:png,jpg,jpeg|max:2048',
-                'category_id' => [
-                    'sometimes',
-                    'nullable',
-                    Rule::exists('categories', 'id'),
-                ],
-                'unit_id' => [
-                    'sometimes',
-                    'nullable',
-                    Rule::exists('units', 'id'),
-                ],
-            ]);
+                'category_id' => 'sometimes|exists:categories,id',
+                'unit_id' => 'sometimes|exists:units,id',
+            ];
 
+            // 3. Validasi
+            $validator = Validator::make($request->all(), $rules);
             if ($validator->fails()) {
                 return response()->json([
                     'status' => 'error',
@@ -172,36 +176,38 @@ class ProductController extends Controller
                 ], 400);
             }
 
+            // 4. Ambil data yang tervalidasi
+            $data = $validator->validated();
+
+            // 5. Tangani upload image jika ada
             if ($request->hasFile('image')) {
+                // hapus file lama
                 if ($product->image && Storage::disk('public')->exists($product->image)) {
                     Storage::disk('public')->delete($product->image);
                 }
-
-                $product->image = $request->file('image')->store('images', 'public');
+                // simpan file baru
+                $data['image'] = $request->file('image')
+                    ->store('images', 'public');
             }
 
-            $product->update([
-                'name' => $request->name ?? $product->name,
-                'price' => $request->price ?? $product->price,
-                'stock' => $request->stock ?? $product->stock,
-                'category_id' => $request->category_id ?? $product->category_id,
-                'unit_id' => $request->unit_id ?? $product->unit_id,
-            ]);
+            // 6. Mass-assignment update
+            $product->update($data);
 
+            // 7. Kembalikan response dengan relasi ter-load
             return response()->json([
                 'status' => 'success',
                 'message' => 'Product updated successfully',
                 'data' => $product->load('category:id,name', 'unit:id,name'),
             ], 200);
+
         } catch (\Exception $e) {
-            Log::error('Error during update product: ' . $e->getMessage(), [
+            Log::error('Error updating product: ' . $e->getMessage(), [
                 'exception' => $e,
             ]);
-
             return response()->json([
                 'status' => 'error',
                 'message' => 'Internal server error',
-                'error' => $e->getMessage(), // Opsional
+                'errors' => $e->getMessage(),
             ], 500);
         }
     }

@@ -15,7 +15,14 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('user_id');
             $table->dateTime('checkout_date');
-            
+            $table->uuid('purpose_id');
+            $table->string('description')->nullable();
+
+            $table->foreign('purpose_id')
+                ->references('id')
+                ->on('purposes')
+                ->onDelete('cascade');
+
             $table->foreign('user_id')
                 ->references('id')
                 ->on('users')

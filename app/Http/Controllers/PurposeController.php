@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Unit;
+use App\Models\Purpose;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
-class UnitController extends Controller
+class PurposeController extends Controller
 {
     public function index(Request $request)
     {
@@ -19,7 +20,7 @@ class UnitController extends Controller
             $search = $request->get('search', '');
             $search_column = $request->get('search_column', 'name');
 
-            $query = Unit::query();
+            $query = Purpose::query();
 
             if ($search_column && $search) {
                 $query->where($search_column, 'like', '%' . $search . '%');
@@ -28,14 +29,14 @@ class UnitController extends Controller
                     ->where('name', 'like', '%' . $search . '%');
             }
 
-            $units = $query
+            $purposes = $query
                 ->orderBy($sort_column, $sort_type)
                 ->paginate($limit, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Units fetched successfully',
-                'data' => $units,
+                'message' => 'Purposes fetched successfully',
+                'data' => $purposes,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -44,6 +45,7 @@ class UnitController extends Controller
             ], 500);
         }
     }
+
     public function store(Request $request)
     {
         try {
@@ -51,7 +53,7 @@ class UnitController extends Controller
                 'name' => [
                     'required',
                     'string',
-                    Rule::unique('units')->where(function ($query) use ($request) {
+                    Rule::unique('purposes')->where(function ($query) use ($request) {
                         $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
                     }),
                 ],
@@ -62,17 +64,17 @@ class UnitController extends Controller
                     'status' => 'error',
                     'message' => 'Validation error',
                     'errors' => $validator->errors(),
-                ], 400);
+                ], 422);
             }
 
-            $unit = Unit::create([
-                'name' => $request->name
+            $purpose = Purpose::create([
+                'name' => $request->name,
             ]);
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Unit created successfully',
-                'data' => $unit,
+                'message' => 'Purpose created successfully',
+                'data' => $purpose,
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
@@ -82,22 +84,15 @@ class UnitController extends Controller
         }
     }
 
-    public function show($unit_id)
+    public function show($id)
     {
         try {
-            $unit = Unit::find($unit_id);
-
-            if (!$unit) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Unit not found',
-                ], 404);
-            }
+            $purpose = Purpose::findOrFail($id);
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Unit fetched successfully',
-                'data' => $unit,
+                'message' => 'Purpose fetched successfully',
+                'data' => $purpose,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -107,29 +102,24 @@ class UnitController extends Controller
         }
     }
 
-    public function update(Request $request, $unit_id)
+    public function update(Request $request, $purpose_id)
     {
         try {
-            $unit = Unit::find($unit_id);
+            $purpose = Purpose::find($purpose_id);
 
-            if (!$unit) {
+            if (!$purpose) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Unit not found',
+                    'message' => 'Purpose not found',
                 ], 404);
             }
 
             $validator = Validator::make($request->all(), [
-                'name' => [
-                    'sometimes',
-                    'string',
-                    Rule::unique('units')
-                    ->ignore($unit->id)
-                    ->where(
-                        function ($query) use ($request) {
-                        $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
-                    }),
-                ],
+                'name' => 'sometimes',
+                'string',
+                Rule::unique('purposes')->where(function ($query) use ($request) {
+                    $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
+                }),
             ]);
 
             if ($validator->fails()) {
@@ -137,34 +127,36 @@ class UnitController extends Controller
                     'status' => 'error',
                     'message' => 'Validation error',
                     'errors' => $validator->errors(),
-                ], 400);
+                ], 422);
             }
 
-            $data = $validator->validated();
-
-            $unit->update($data);
+            $purpose->update([
+                'name' => $request->name ?? $purpose->name,
+            ]);
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Unit updated successfully',
-                'data' => $unit,
+                'message' => 'Purpose updated successfully',
+                'data' => $purpose,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Internal server error',
+                'errors' => $e->getMessage(),
             ], 500);
         }
     }
 
-    public function destroy(Unit $unit)
+    public function destroy($id)
     {
         try {
-            $unit->delete();
+            $purpose = Purpose::findOrFail($id);
+            $purpose->delete();
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Unit deleted successfully',
+                'message' => 'Purpose deleted successfully',
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

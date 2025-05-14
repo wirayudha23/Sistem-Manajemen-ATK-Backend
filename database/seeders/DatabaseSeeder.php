@@ -228,14 +228,45 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $user1 = User::create([
-            'name' => 'Dosen Wirayudha',
-            'email' => 'userdosen1@gmail.com',
+            'name' => 'Tendik Ahmad',
+            'email' => 'ahmad21si@mahasiswa.pcr.ac.id',
             'nip' => '123456',
-            'position' => 'Dosen',
+            'position' => 'Tendik',
             'study_program_id' => $studyProgram2->id,
             'initial' => 'WYD',
-            'role' => 'dosen',
+            'role' => 'BAAK',
         ]);
+
+        $user2 = User::create([
+            'name' => 'Kabag Ahmad',
+            'email' => 'ahmadfadhil2003@gmail.com',
+            'nip' => '122334',
+            'position' => 'Tendik',
+            'study_program_id' => $studyProgram1->id,
+            'initial' => 'AFW',
+            'role' => 'Kabag',
+        ]);
+
+        $user3 = User::create([
+            'name' => 'Sarah Nabilah',
+            'email' => 'sarahnabilahputri@gmail.com',
+            'nip' => '122222',
+            'position' => 'Tendik',
+            'study_program_id' => $studyProgram1->id,
+            'initial' => 'MGY',
+            'role' => 'BAAK',
+        ]);
+
+        $user4 = User::create([
+            'name' => 'Sarah Nabilah Putri',
+            'email' => 'sarah21si@mahasiswa.pcr.ac.id',
+            'nip' => '133333',
+            'position' => 'Tendik',
+            'study_program_id' => $studyProgram1->id,
+            'initial' => 'SRB',
+            'role' => 'BAAK',
+        ]);
+
 
         CheckoutCart::create([
             'product_id' => $product1->id,

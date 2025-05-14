@@ -2,18 +2,26 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use App\Models\Checkout;
 
-class Unit extends Model
+class Purpose extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'name'
     ];
 
     public function setNameAttribute($value)
     {
-        $this->attributes['name'] = Str::title(trim($value));
+        $this->attributes['name'] = Str::title($value);
+    }
+
+    public function checkouts()
+    {
+        return $this->hasMany(Checkout::class);
     }
 
     public $incrementing = false;
@@ -28,10 +36,5 @@ class Unit extends Model
                 $model->{$model->getKeyName()} = (string) Str::uuid();
             }
         });
-    }
-
-    public function products()
-    {
-        return $this->hasMany(Product::class);
     }
 }

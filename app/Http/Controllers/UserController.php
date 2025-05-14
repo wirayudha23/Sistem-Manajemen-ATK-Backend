@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -51,46 +52,41 @@ class UserController extends Controller
     public function store(Request $request)
     {
         try {
-            $position = $request->input('position');
+            // Define allowed roles per position
+            $roleOptions = [
+                'Dosen' => ['Staff'],
+                'Tendik' => ['BAAK', 'Staff'],
+                'Rumah Tangga' => ['Staff'],
+            ];
 
-            $validator = Validator::make($request->all(), [
+            // Validation rules
+            $rules = [
                 'google_id' => 'nullable|string',
-                'name' => 'required|string|unique:users,name',
+                'name' => [
+                    'required',
+                    'string',
+                    Rule::unique('users', 'name')->where(function ($query) use ($request) {
+                        $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
+                    }),
+                ],
                 'email' => 'required|email|unique:users,email',
                 'nip' => 'required|digits:6|integer|unique:users,nip',
-                'position' => 'required|string|in:Dosen,Tendik,Rumah Tangga',
-                'initial' => 'required|string|unique:users,initial|size:3|alpha',
-                'role' => 'required|string|in:Kabag,BAAK,Staff',
-                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'position' => ['required', 'string', 'in:Dosen,Tendik,Rumah Tangga'],
+                'initial' => 'required|alpha|size:3|unique:users,initial',
+                'role' => [
+                    'required',
+                    'string',
+                    Rule::in($roleOptions[$request->position] ?? []),
+                ],
                 'study_program_id' => [
+                    Rule::requiredIf($request->position === 'Dosen'),
                     'nullable',
-                    Rule::exists('study_programs', 'id')->where(function ($query) {
-                        $query->whereNotNull('id');
-                    })
-                ]
-            ]);
+                    'exists:study_programs,id',
+                ],
+                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            ];
 
-            $validator->after(function ($validator) use ($request, $position) {
-                // Role enforcement per position
-                if ($position === 'Dosen') {
-                    if ($request->role !== 'Staff') {
-                        $validator->errors()->add('role', 'For Dosen position, role must be Staff.');
-                    }
-                    if (empty($request->study_program_id)) {
-                        $validator->errors()->add('study_program_id', 'Study program is required for Dosen.');
-                    }
-                } elseif ($position === 'Tendik') {
-                    if ($request->role !== 'BAAK') {
-                        $validator->errors()->add('role', 'For Tendik position, role must be BAAK.');
-                    }
-                    // study_program_id will be ignored and set to null, no validation error
-                } elseif ($position === 'Rumah Tangga') {
-                    if ($request->role !== 'Staff') {
-                        $validator->errors()->add('role', 'For Rumah Tangga position, role must be Staff.');
-                    }
-                    // study_program_id will be ignored and set to null, no validation error
-                }
-            });
+            $validator = Validator::make($request->all(), $rules);
 
             if ($validator->fails()) {
                 return response()->json([
@@ -100,25 +96,33 @@ class UserController extends Controller
                 ], 422);
             }
 
-            $studyProgramId = $position === 'Dosen' ? $request->study_program_id : null;
+            // Retrieve validated data
+            $data = $validator->validated();
 
-            $user = User::create([
-                'google_id' => null,
-                'name' => $request->name,
-                'email' => $request->email,
-                'nip' => $request->nip,
-                'position' => $request->position,
-                'study_program_id' => $studyProgramId,
-                'initial' => $request->initial,
-                'role' => $request->role,
-                'avatar' => null
-            ]);
+            // If not Dosen, clear study_program_id
+            if (($data['position'] ?? null) !== 'Dosen') {
+                $data['study_program_id'] = null;
+            }
+
+            // Handle avatar upload
+            if ($request->hasFile('avatar')) {
+                $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
+            }
+
+            // Persist in transaction
+            DB::beginTransaction();
+            $user = User::create($data);
+            DB::commit();
 
             return response()->json([
                 'status' => 'success',
                 'data' => $user,
             ], 201);
+
         } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error creating user: ' . $e->getMessage(), ['exception' => $e]);
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Internal server error',
@@ -243,7 +247,7 @@ class UserController extends Controller
                         }
                         // Tendik
                         elseif ($pos === 'Tendik') {
-                            if ($role !== 'BAAK') {
+                            if ($role !== ['BAAK', 'Staff']) {
                                 $validator->errors()->add('role', 'For Tendik position, role must be BAAK.');
                             }
                         }

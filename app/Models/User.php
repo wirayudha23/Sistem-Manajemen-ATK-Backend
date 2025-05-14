@@ -27,6 +27,15 @@ class User extends Authenticatable
         'avatar',
     ];
 
+    public function setNameAttribute($value)
+    {
+        $this->attributes['name'] = Str::title(trim($value));
+    }
+    public function setInitialAttribute($value)
+    {
+        $this->attributes['initial'] = Str::upper(trim($value));
+    }
+
     public function checkouts()
     {
         return $this->hasMany(Checkout::class);

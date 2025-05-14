@@ -57,6 +57,7 @@ class CheckoutCartController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'product_id' => 'required|exists:products,id',
+                'checkout_quantity' => 'required|integer|min:1',
             ]);
 
             if ($validator->fails()) {
@@ -85,7 +86,7 @@ class CheckoutCartController extends Controller
 
             $checkoutCart = CheckoutCart::create([
                 'product_id' => $request->product_id,
-                'checkout_quantity' => 1,
+                'checkout_quantity' => $request->checkout_quantity,
             ]);
 
             return response()->json([
