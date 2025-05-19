@@ -62,7 +62,7 @@ class UnitController extends Controller
                     'status' => 'error',
                     'message' => 'Validation error',
                     'errors' => $validator->errors(),
-                ], 400);
+                ], 422);
             }
 
             $unit = Unit::create([

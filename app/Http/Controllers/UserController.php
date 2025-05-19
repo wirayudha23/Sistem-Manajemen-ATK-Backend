@@ -39,6 +39,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => 'success',
+                'message' => 'Users fetched successfully',
                 'data' => $users,
             ], 200);
         } catch (\Exception $e) {
@@ -78,6 +79,15 @@ class UserController extends Controller
                     'string',
                     Rule::in($roleOptions[$request->position] ?? []),
                 ],
+                'phone_number' => [
+                    Rule::requiredIf($request->position === 'Rumah Tangga'),
+                    'nullable',
+                    'string',
+                    'min:11',
+                    'max:12',
+                    'unique:users,phone_number',
+                    'regex:/^08\d{9,10}$/'
+                ],
                 'study_program_id' => [
                     Rule::requiredIf($request->position === 'Dosen'),
                     'nullable',
@@ -99,6 +109,11 @@ class UserController extends Controller
             // Retrieve validated data
             $data = $validator->validated();
 
+            if (($data['position'] ?? null) !== 'Rumah Tangga') {
+                $data['phone_number'] = null;
+            }
+
+
             // If not Dosen, clear study_program_id
             if (($data['position'] ?? null) !== 'Dosen') {
                 $data['study_program_id'] = null;
@@ -116,6 +131,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => 'success',
+                'message' => 'User created successfully',
                 'data' => $user,
             ], 201);
 
@@ -139,11 +155,13 @@ class UserController extends Controller
                 return response()->json([
                     'status' => 'error',
                     'message' => 'User not found',
+                    'data' => $user,
                 ], 404);
             }
 
             return response()->json([
                 'status' => 'success',
+                'message' => 'User fetched successfully',
                 'data' => $user,
             ], 200);
         } catch (\Exception $e) {
@@ -169,12 +187,13 @@ class UserController extends Controller
                 return response()->json([
                     'status' => 'error',
                     'message' => 'User not found',
+                    'data' => $user,
                 ], 404);
             }
 
-            // Update actions based on current user's role
+            // Only Kabag and BAAK have update rights
             if ($currentUser->role === 'Kabag') {
-                // Kabag can only update another BAAK's role to Kabag
+                // Prevent self-promotion
                 if ($currentUser->id === $user->id) {
                     return response()->json([
                         'status' => 'error',
@@ -182,13 +201,15 @@ class UserController extends Controller
                     ], 403);
                 }
 
+                // Only users with role BAAK can be promoted
                 if ($user->role !== 'BAAK') {
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Only users with role BAAK can be promoted',
+                        'message' => 'Only users with role BAAK can be promoted to Kabag',
                     ], 400);
                 }
 
+                // Ensure new role is Kabag
                 $newRole = $request->input('role');
                 if ($newRole !== 'Kabag') {
                     return response()->json([
@@ -197,46 +218,70 @@ class UserController extends Controller
                     ], 400);
                 }
 
-                // Promote target and demote current
-
-                // Use transaction to ensure atomicity
-                \DB::transaction(function () use ($user, $currentUser) {
-                    // Promote target to Kabag
+                // Perform atomic promotion and demotion
+                DB::transaction(function () use ($user, $currentUser) {
                     $user->update(['role' => 'Kabag']);
-
-                    // Demote current Kabag to Staff
                     $currentUser->update(['role' => 'Staff']);
                 });
 
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'User role updated and current Kabag demoted',
+                    'message' => 'User promoted to Kabag and current Kabag demoted to Staff',
                     'data' => $user,
                 ], 200);
 
             } elseif ($currentUser->role === 'BAAK') {
-                // BAAK can update profile fields and role
-                // Build validation rules (similar to store)
+                // Validation rules aligned with store()
                 $rules = [
-                    'name' => ['sometimes', 'string', Rule::unique('users', 'name')->ignore($user->id)],
-                    'email' => ['sometimes', 'email', Rule::unique('users', 'email')->ignore($user->id)],
-                    'nip' => ['sometimes', 'digits:6', 'integer', Rule::unique('users', 'nip')->ignore($user->id)],
+                    'name' => [
+                        'sometimes',
+                        'string',
+                        Rule::unique('users', 'name')
+                            ->ignore($user->id)
+                            ->where(function ($query) use ($request) {
+                                $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
+                            }),
+                    ],
+                    'email' => [
+                        'sometimes',
+                        'email',
+                        Rule::unique('users', 'email')->ignore($user->id),
+                    ],
+                    'nip' => [
+                        'sometimes',
+                        'digits:6',
+                        'integer',
+                        Rule::unique('users', 'nip')->ignore($user->id),
+                    ],
+                    'initial' => [
+                        'sometimes',
+                        'alpha',
+                        'size:3',
+                        Rule::unique('users', 'initial')->ignore($user->id),
+                    ],
                     'position' => ['sometimes', 'string', 'in:Dosen,Tendik,Rumah Tangga'],
-                    'initial' => ['sometimes', 'string', 'size:3', 'alpha', Rule::unique('users', 'initial')->ignore($user->id)],
-                    'avatar' => ['sometimes', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
-                    'study_program_id' => ['nullable', Rule::exists('study_programs', 'id')],
                     'role' => ['sometimes', 'string'],
+                    'study_program_id' => ['sometimes', 'nullable', Rule::exists('study_programs', 'id')],
+                    'avatar' => ['sometimes', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
+                    'phone_number' => [
+                        Rule::requiredIf($request->input('position', $user->position) === 'Rumah Tangga'),
+                        'nullable',
+                        'string',
+                        'min:11',
+                        'max:12',
+                        "regex:/^08\\d{9,10}$/",
+                        Rule::unique('users', 'phone_number')->ignore($user->id),
+                    ],
                 ];
 
                 $validator = Validator::make($request->all(), $rules);
 
-                // Conditional validation for position-role-prodi
-                $validator->after(function ($validator) use ($request) {
-                    $pos = $request->input('position', $request->user()->position);
-                    $role = $request->input('role', $request->user()->role);
+                // Conditional checks: keep existing after() logic
+                $validator->after(function ($validator) use ($request, $user) {
+                    $pos = $request->input('position', $user->position);
+                    $role = $request->input('role', $user->role);
 
-                    if ($request->has('position') || $request->has('role') || $request->has('study_program_id')) {
-                        // Dosen
+                    if ($request->hasAny(['position', 'role', 'study_program_id'])) {
                         if ($pos === 'Dosen') {
                             if ($role !== 'Staff') {
                                 $validator->errors()->add('role', 'For Dosen position, role must be Staff.');
@@ -244,15 +289,12 @@ class UserController extends Controller
                             if (!$request->filled('study_program_id')) {
                                 $validator->errors()->add('study_program_id', 'Study program is required for Dosen.');
                             }
-                        }
-                        // Tendik
-                        elseif ($pos === 'Tendik') {
-                            if ($role !== ['BAAK', 'Staff']) {
-                                $validator->errors()->add('role', 'For Tendik position, role must be BAAK.');
+                        } elseif ($pos === 'Tendik') {
+                            $allowed = ['BAAK', 'Staff'];
+                            if (!in_array($role, $allowed)) {
+                                $validator->errors()->add('role', 'For Tendik position, role must be BAAK or Staff.');
                             }
-                        }
-                        // Rumah Tangga
-                        elseif ($pos === 'Rumah Tangga') {
+                        } elseif ($pos === 'Rumah Tangga') {
                             if ($role !== 'Staff') {
                                 $validator->errors()->add('role', 'For Rumah Tangga position, role must be Staff.');
                             }
@@ -265,26 +307,26 @@ class UserController extends Controller
                         'status' => 'error',
                         'message' => 'Validation error',
                         'errors' => $validator->errors(),
-                    ], 400);
+                    ], 422);
                 }
 
-                // Determine updated values
-                $position = $request->input('position', $user->position);
-                $studyProgramId = $position === 'Dosen'
-                    ? $request->input('study_program_id', $user->study_program_id)
-                    : null;
+                // Prepare update data
+                $data = $validator->validated();
+
+                if (isset($data['position']) && $data['position'] !== 'Dosen') {
+                    $data['study_program_id'] = null;
+                }
+
+                if (isset($data['position']) && $data['position'] !== 'Rumah Tangga') {
+                    $data['phone_number'] = null;
+                }
+
+                if ($request->hasFile('avatar')) {
+                    $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
+                }
 
                 // Perform update
-                $user->update([
-                    'name' => $request->input('name', $user->name),
-                    'email' => $request->input('email', $user->email),
-                    'nip' => $request->input('nip', $user->nip),
-                    'position' => $position,
-                    'study_program_id' => $studyProgramId,
-                    'initial' => $request->input('initial', $user->initial),
-                    'role' => $request->input('role', $user->role),
-                    'avatar' => $request->input('avatar', $user->avatar),
-                ]);
+                $user->update($data);
 
                 return response()->json([
                     'status' => 'success',
@@ -296,7 +338,7 @@ class UserController extends Controller
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Unauthorized access',
-                ], 403);
+                ], 401);
             }
 
         } catch (\Exception $e) {
@@ -307,6 +349,7 @@ class UserController extends Controller
             ], 500);
         }
     }
+
 
     public function destroy(User $user)
     {

@@ -11,3 +11,20 @@ Route::get('/', function () {
 Route::get('/redirect', [SocialiteController::class, 'redirect'])->name('redirect');
 Route::get('/callback', [SocialiteController::class, 'callback']);
 Route::post('/logout', [SocialiteController::class, 'logout'])->name('logout');
+
+// Tambahkan route debug-env
+Route::get('/debug-fonnte-config', function(){
+  dd(config('services.fonnte'));
+
+});
+
+Route::get('/debug-appname', function () {
+    dd([
+      'TOKEN' => env('FONNTE_API_TOKEN'),
+      'URL'   => env('FONNTE_BASE_URL')
+    ]);
+});
+
+
+
+

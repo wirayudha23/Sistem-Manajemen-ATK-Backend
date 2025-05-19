@@ -9,9 +9,18 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use App\Helpers\PhoneHelper;
+use App\Services\WhatsAppService;
 
 class ReorderController extends Controller
 {
+    protected WhatsAppService $wa;
+
+    public function __construct(WhatsAppService $wa)
+    {
+        $this->wa = $wa;
+    }
+
     public function index(Request $request)
     {
         try {
@@ -51,52 +60,46 @@ class ReorderController extends Controller
 
     public function store(Request $request)
     {
-        $reorderDate = Carbon::now('Asia/Jakarta');
-
+        $now = Carbon::now('Asia/Jakarta');
         $validator = Validator::make($request->all(), [
-            'delivery_date' => 'required|date_format:d-m-Y|after_or_equal:' . $reorderDate->format('d-m-Y'),
+            'delivery_date' => 'required|date_format:d-m-Y|after_or_equal:' . $now->format('d-m-Y'),
+            'phone_number'  => 'required',
         ]);
-
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $validator->errors()->first(),
-            ], 400);
+            return response()->json(['status'=>'error','message'=>$validator->errors()->first()],400);
         }
 
-        $reorderCart = ReorderCart::all();
-
-        if ($reorderCart->isEmpty()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Cart is empty.'
-            ], 400);
+        $cart = ReorderCart::all();
+        if ($cart->isEmpty()) {
+            return response()->json(['status'=>'error','message'=>'Cart is empty.'],400);
         }
 
-        $deliveryDate = Carbon::createFromFormat('d-m-Y', $request->delivery_date)->format('Y-m-d');
-
-        $reorder = Reorder::create([
-            'reorder_date' => $reorderDate,
-            'delivery_date' => $deliveryDate
-        ]);
-
-        foreach ($reorderCart as $item) {
+        $delivery = Carbon::createFromFormat('d-m-Y', $request->delivery_date)->format('Y-m-d');
+        $reorder = Reorder::create(['reorder_date'=>$now,'delivery_date'=>$delivery]);
+        foreach ($cart as $item) {
             ReorderDetail::create([
-                'reorder_id' => $reorder->id,
-                'product_id' => $item->product_id,
-                'reorder_quantity' => $item->reorder_quantity,
+                'reorder_id'=>$reorder->id,
+                'product_id'=>$item->product_id,
+                'reorder_quantity'=>$item->reorder_quantity,
             ]);
         }
-
         $reorder->updateTotalPrice();
-
         ReorderCart::truncate();
 
+        $to      = $this->wa->formatPhone($request->phone_number);
+        $message = $this->wa->buildReorderMessage($reorder);
+
+        try {
+            $this->wa->sendMessage($to, $message);
+        } catch (\Exception $e) {
+            \Log::error('[WA ERROR] '.$e->getMessage());
+        }
+
         return response()->json([
-            'status' => 'success',
-            'message' => 'Reorder created.',
-            'data' => $reorder->load('items.product'),
-        ], 201);
+            'status'=>'success',
+            'message'=>'Reorder created and WhatsApp sent.',
+            'data'=>$reorder
+        ],201);
     }
 
     public function show($id)

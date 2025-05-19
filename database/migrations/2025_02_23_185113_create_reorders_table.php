@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('reorders', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->dateTime('reorder_date');
-            $table->dateTime('delivery_date');
+            $table->date('reorder_date');
+            $table->date('delivery_date');
             $table->integer('total_reorder_price')->default(0);
             $table->timestamps();
         });

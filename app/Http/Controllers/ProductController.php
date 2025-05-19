@@ -9,6 +9,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Log;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -17,29 +18,41 @@ class ProductController extends Controller
         try {
             $page = $request->get('page', 1);
             $limit = $request->get('limit', 10);
-            $sort_column = $request->get('sort_column', 'name');
-            $sort_type = $request->get('sort_type', 'asc');
+            $sortColumn = $request->get('sort_column', 'name');
+            $sortType = $request->get('sort_type', 'asc');
             $search = $request->get('search', '');
-            $search_column = $request->get('search_column', 'name');
+            $searchColumn = $request->get('search_column', 'name');
 
-            $query = Product::query()->with('category:id,name', 'unit:id,name');
+            $query = Product::with('category:id,name', 'unit:id,name');
 
-            if ($search_column && $search) {
-                $query->where($search_column, 'like', '%' . $search . '%');
-            } else if ($search) {
-                $query
-                    ->where('name', 'like', '%' . $search . '%');
+            // -- SEARCH --
+            if ($search) {
+                if ($searchColumn) {
+                    $query->where($searchColumn, 'like', "%{$search}%");
+                } else {
+                    $query->where('name', 'like', "%{$search}%");
+                }
             }
 
-            $products = $query
-                ->orderBy($sort_column, $sort_type)
-                ->paginate($limit, ['*'], 'page', $page);
+            // -- SORTING --
+            if ($sortColumn === 'stock') {
+                // Jika sort_column=stock, artinya klien ingin urutan berdasarkan kedekatan stock ke ROP
+                $query->orderByRaw("ABS(stock - reorder_point) {$sortType}")
+                    // tiebreaker: urutkan juga by stock/reorder_point kalau perlu
+                    ->orderBy('stock', $sortType);
+            } else {
+                // Urutan normal sesuai kolom yang diminta
+                $query->orderBy($sortColumn, $sortType);
+            }
+
+            $products = $query->paginate($limit, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Products fetched successfully',
                 'data' => $products,
             ], 200);
+
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
@@ -62,18 +75,8 @@ class ProductController extends Controller
                 'price' => 'required|integer|min:0',
                 'stock' => 'required|integer|min:0',
                 'image' => 'required|image|mimes:png,jpg,jpeg|max:2048',
-                'category_id' => [
-                    'required',
-                    Rule::exists('categories', 'id')->where(function ($query) {
-                        $query->whereNotNull('id');
-                    })
-                ],
-                'unit_id' => [
-                    'required',
-                    Rule::exists('units', 'id')->where(function ($query) {
-                        $query->whereNotNull('id');
-                    })
-                ]
+                'category_id' => 'required|exists:categories,id',
+                'unit_id' => 'required|exists:units,id',
             ]);
 
             if ($validator->fails()) {
@@ -81,29 +84,30 @@ class ProductController extends Controller
                     'status' => 'error',
                     'message' => 'Validation error',
                     'errors' => $validator->errors(),
-                ], 400);
+                ], 422);
             }
 
-            $imagePath = $request->file('image')->store('images', 'public');
+            $data = $validator->validated();
 
-            $product = Product::create([
-                'name' => $request->name,
-                'price' => $request->price,
-                'stock' => $request->stock,
-                'category_id' => $request->category_id,
-                'unit_id' => $request->unit_id,
-                'image' => $imagePath
-            ]);
+            DB::transaction(function () use ($request, &$product, &$data) {
+                $data['image'] = $request->file('image')->store('images', 'public');
+                $product = Product::create($data);
+            });
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Product created successfully',
                 'data' => $product->load('category:id,name', 'unit:id,name'),
             ], 201);
+
         } catch (\Exception $e) {
+            if (!empty($data['image']) && Storage::disk('public')->exists($data['image'])) {
+                Storage::disk('public')->delete($data['image']);
+            }
             return response()->json([
                 'status' => 'error',
                 'message' => 'Internal server error',
+                'errors' => $e->getMessage(),
             ], 500);
         }
     }
@@ -139,7 +143,6 @@ class ProductController extends Controller
     public function update(Request $request, $product_id)
     {
         try {
-            // 1. Cari product
             $product = Product::find($product_id);
             if (!$product) {
                 return response()->json([
@@ -148,52 +151,40 @@ class ProductController extends Controller
                 ], 404);
             }
 
-            // 2. Atur rules
-            $rules = [
-                'name' => [
-                    'sometimes',
-                    'string',
-                    Rule::unique('products', 'name')
-                        ->ignore($product->id, 'id')
-                        ->where(function ($q) use ($request) {
-                            $q->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
-                        }),
-                ],
+            // 1. Validasi
+            $validator = Validator::make($request->all(), [
+                'name' => ['sometimes', 'string', Rule::unique('products', 'name')->ignore($product->id)->where(fn($q) => $q->whereRaw('LOWER(name)=?', [strtolower($request->name)]))],
                 'price' => 'sometimes|integer|min:0',
                 'stock' => 'sometimes|integer|min:0',
                 'image' => 'sometimes|image|mimes:png,jpg,jpeg|max:2048',
                 'category_id' => 'sometimes|exists:categories,id',
                 'unit_id' => 'sometimes|exists:units,id',
-            ];
+            ]);
 
-            // 3. Validasi
-            $validator = Validator::make($request->all(), $rules);
             if ($validator->fails()) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Validation error',
                     'errors' => $validator->errors(),
-                ], 400);
+                ], 422);
             }
 
-            // 4. Ambil data yang tervalidasi
             $data = $validator->validated();
 
-            // 5. Tangani upload image jika ada
-            if ($request->hasFile('image')) {
-                // hapus file lama
-                if ($product->image && Storage::disk('public')->exists($product->image)) {
-                    Storage::disk('public')->delete($product->image);
+            // 2. Simpan update dalam transaksi
+            DB::transaction(function () use ($request, $product, &$data) {
+                if ($request->hasFile('image')) {
+                    // hapus gambar lama
+                    if ($product->image && Storage::disk('public')->exists($product->image)) {
+                        Storage::disk('public')->delete($product->image);
+                    }
+                    // simpan yang baru
+                    $data['image'] = $request->file('image')->store('images', 'public');
                 }
-                // simpan file baru
-                $data['image'] = $request->file('image')
-                    ->store('images', 'public');
-            }
+                // update data
+                $product->update($data);
+            });
 
-            // 6. Mass-assignment update
-            $product->update($data);
-
-            // 7. Kembalikan response dengan relasi ter-load
             return response()->json([
                 'status' => 'success',
                 'message' => 'Product updated successfully',
@@ -201,9 +192,7 @@ class ProductController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
-            Log::error('Error updating product: ' . $e->getMessage(), [
-                'exception' => $e,
-            ]);
+            Log::error('Error updating product: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => 'Internal server error',

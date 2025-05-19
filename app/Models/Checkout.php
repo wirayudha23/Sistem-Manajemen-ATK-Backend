@@ -12,7 +12,9 @@ class Checkout extends Model
 
     protected $fillable = [
         'user_id',
+        'purpose_id',
         'checkout_date',
+        'description',
     ];
 
     public $incrementing = false;
@@ -35,5 +37,10 @@ class Checkout extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function purpose()
+    {
+        return $this->belongsTo(Purpose::class);
     }
 }

@@ -65,7 +65,7 @@ class CheckoutCartController extends Controller
                     'status' => 'error',
                     'message' => 'Validation error',
                     'errors' => $validator->errors(),
-                ], 400);
+                ], 422);
             }
 
             $product = Product::find($request->product_id);
@@ -74,14 +74,14 @@ class CheckoutCartController extends Controller
                 return response()->json([
                     'status' => 'error',
                     'message' => "Product {$product->name} is out of stock."
-                ], 400);
+                ], 409);
             }
 
             if (CheckoutCart::where('product_id', $request->product_id)->exists()) {
                 return response()->json([
                     'status' => 'error',
                     'message' => "Product {$product->name} already in checkout cart."
-                ], 400);
+                ], 409);
             }
 
             $checkoutCart = CheckoutCart::create([
@@ -147,7 +147,7 @@ class CheckoutCartController extends Controller
                     'status' => 'error',
                     'message' => 'Validation error',
                     'errors' => $validator->errors(),
-                ], 400);
+                ], 422);
             }
 
             $product = Product::find($checkoutCart->product_id);
@@ -156,7 +156,7 @@ class CheckoutCartController extends Controller
                 return response()->json([
                     'status' => 'error',
                     'message' => "Product {$product->name} stock is not enough."
-                ], 400);
+                ], 409);
             }
 
             $checkoutCart->update([

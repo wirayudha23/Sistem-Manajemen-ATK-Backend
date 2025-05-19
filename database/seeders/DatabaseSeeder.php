@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Checkout;
+use App\Models\Purpose;
 use App\Models\Reorder;
 use App\Models\ReorderCart;
 use App\Models\Unit;
@@ -235,6 +236,7 @@ class DatabaseSeeder extends Seeder
             'study_program_id' => $studyProgram2->id,
             'initial' => 'WYD',
             'role' => 'BAAK',
+            'phone_number' => null,
         ]);
 
         $user2 = User::create([
@@ -245,6 +247,7 @@ class DatabaseSeeder extends Seeder
             'study_program_id' => $studyProgram1->id,
             'initial' => 'AFW',
             'role' => 'Kabag',
+            'phone_number' => null,
         ]);
 
         $user3 = User::create([
@@ -255,6 +258,7 @@ class DatabaseSeeder extends Seeder
             'study_program_id' => $studyProgram1->id,
             'initial' => 'MGY',
             'role' => 'BAAK',
+            'phone_number' => null,
         ]);
 
         $user4 = User::create([
@@ -265,6 +269,18 @@ class DatabaseSeeder extends Seeder
             'study_program_id' => $studyProgram1->id,
             'initial' => 'SRB',
             'role' => 'BAAK',
+            'phone_number' => null,
+        ]);
+
+        $user5 = User::create([
+            'name' => 'Dosen Ahmad',
+            'email' => 'alexasep2304@gmail.com',
+            'nip' => '134679',
+            'position' => 'Tendik',
+            'study_program_id' => $studyProgram2->id,
+            'initial' => 'ALX',
+            'role' => 'Staff',
+            'phone_number' => null,
         ]);
 
 
@@ -290,6 +306,17 @@ class DatabaseSeeder extends Seeder
         ReorderCart::create([
             'product_id' => $product2->id
         ]);
+
+        Purpose::create(['name' => 'Prodi/Bagian']);
+        Purpose::create(['name' => 'Perkuliahan']);
+        Purpose::create(['name' => 'Pengabdian']);
+        Purpose::create(['name' => 'Penelitian']);
+        Purpose::create(['name' => 'Kepanitiaan']);
+
+
+
+
+
 
         // Reorder::create([
         //     'reorder_date' => now(),

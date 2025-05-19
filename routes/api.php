@@ -1,18 +1,19 @@
 <?php
 
-use App\Http\Controllers\CheckoutExcelController;
-use App\Http\Controllers\SocialiteController;
-use App\Http\Controllers\StudyProgramController;
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\StudyProgramController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\PurposeController;
 use App\Http\Controllers\CheckoutCartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\CheckoutExcelController;
 use App\Http\Controllers\ReorderCartController;
 use App\Http\Controllers\ReorderController;
 use App\Http\Controllers\ProductReceivedController;
 use App\Http\Controllers\FundTransactionController;
+use App\Http\Controllers\SocialiteController;
 use App\Http\Controllers\EmailController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -31,10 +32,11 @@ Route::middleware('role')->group(function () {
 
 
 Route::apiResource('categories', CategoryController::class);
-Route::apiResource('products', ProductController::class);
 Route::apiResource('units', UnitController::class);
+Route::apiResource('products', ProductController::class);
 Route::apiResource('study-programs', StudyProgramController::class);
 Route::apiResource('users', UserController::class);
+Route::apiResource('purposes', PurposeController::class);
 Route::apiResource('checkout-carts', CheckoutCartController::class);
 Route::apiResource('checkouts', CheckoutController::class);
 Route::apiResource('reorder-carts', ReorderCartController::class);

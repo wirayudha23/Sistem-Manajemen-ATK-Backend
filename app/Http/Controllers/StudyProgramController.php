@@ -33,6 +33,7 @@ class StudyProgramController extends Controller
 
             return response()->json([
                 'status' => 'success',
+                'message' => 'Study programs fetched successfully',
                 'data' => $studyPrograms,
             ], 200);
         } catch (\Exception $e) {
@@ -59,7 +60,8 @@ class StudyProgramController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => $validator->errors(),
+                    'message' => 'Validation error',
+                    'errors' => $validator->errors(),
                 ], 422);
             }
 
@@ -87,6 +89,7 @@ class StudyProgramController extends Controller
 
             return response()->json([
                 'status' => 'success',
+                'message' => 'Study program fetched successfully',
                 'data' => $studyProgram,
             ], 200);
         } catch (\Exception $e) {
@@ -107,7 +110,8 @@ class StudyProgramController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => $validator->errors(),
+                    'message' => 'Validation error',
+                    'errors' => $validator->errors(),
                 ], 422);
             }
 

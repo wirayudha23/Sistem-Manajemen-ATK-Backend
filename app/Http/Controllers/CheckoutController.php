@@ -50,15 +50,20 @@ class CheckoutController extends Controller
 
         }
     }
+
     public function store(Request $request)
     {
+        // Validasi input
         $validator = Validator::make($request->all(), [
             'user_id' => [
                 'required',
                 Rule::exists('users', 'id')->where(function ($query) {
-                    $query->where('role', 'dosen');
+                    $query->where('role', 'Staff');
                 }),
-            ]
+            ],
+            'purpose_id' => ['required', Rule::exists('purposes', 'id')],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'checkout_date' => ['required', 'date', 'after_or_equal:today'],
         ]);
 
         if ($validator->fails()) {
@@ -66,11 +71,11 @@ class CheckoutController extends Controller
                 'status' => 'error',
                 'message' => 'Validation error',
                 'errors' => $validator->errors(),
-            ], 400);
+            ], 422);
         }
 
+        // Ambil keranjang
         $checkoutCart = CheckoutCart::with('product')->get();
-
         if ($checkoutCart->isEmpty()) {
             return response()->json([
                 'status' => 'error',
@@ -79,48 +84,68 @@ class CheckoutController extends Controller
         }
 
         DB::beginTransaction();
-
         try {
-            // Check stock availability
+            // Cek ketersediaan stok
             foreach ($checkoutCart as $item) {
                 if ($item->product->stock < $item->checkout_quantity) {
                     throw new \Exception('Product ' . $item->product->name . ' out of stock');
                 }
             }
 
-            // Create checkout
+            // Buat checkout (UUID otomatis di model)
             $checkout = Checkout::create([
                 'user_id' => $request->user_id,
-                // 'checkout_date' => Carbon::now('Asia/Jakarta'),
-                'checkout_date' => $request->checkout_date,
+                'purpose_id' => $request->purpose_id,
+                'description' => $request->description,
+                'checkout_date' => Carbon::parse($request->checkout_date)->setTimezone('Asia/Jakarta'),
             ]);
 
-            // Create checkout details and update product stock
+            // Buat detail checkout dan kurangi stok
             foreach ($checkoutCart as $item) {
                 CheckoutDetail::create([
                     'checkout_id' => $checkout->id,
                     'product_id' => $item->product_id,
                     'checkout_quantity' => $item->checkout_quantity,
                 ]);
-
                 $item->product->decrement('stock', $item->checkout_quantity);
             }
 
-            // Clear the cart
+            // Kosongkan keranjang
             CheckoutCart::query()->delete();
 
             DB::commit();
 
+            // Load relasi dengan nama items
+            $checkout->load('purpose', 'user', 'items.product');
+
+            // Siapkan data items
+            $items = $checkout->items->map(function ($detail) {
+                return [
+                    'product_id' => $detail->product_id,
+                    'product_name' => $detail->product->name,
+                    'checkout_quantity' => $detail->checkout_quantity,
+                ];
+            });
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Checkout created.',
-                'data' => $checkout,
+                'data' => [
+                    'checkout_id' => $checkout->id,
+                    'checkout_date' => $checkout->checkout_date->toDateTimeString(),
+                    'purpose_name' => $checkout->purpose->name,
+                    'user' => [
+                        'name' => $checkout->user->name,
+                        'role' => $checkout->user->role,
+                    ],
+                    'description' => $checkout->description,
+                    'items' => $items,
+                ],
             ], 201);
+
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error during checkout: ' . $e->getMessage(), [
-                'exception' => $e,
-            ]);
+            Log::error('Error during checkout: ' . $e->getMessage(), ['exception' => $e]);
 
             return response()->json([
                 'status' => 'error',
@@ -168,7 +193,7 @@ class CheckoutController extends Controller
                 'status' => 'error',
                 'message' => 'Validation error',
                 'errors' => $validator->errors(),
-            ], 400);
+            ], 422);
         }
 
         DB::beginTransaction();

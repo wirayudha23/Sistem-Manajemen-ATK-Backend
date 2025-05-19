@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('user_id');
             $table->dateTime('checkout_date');
             $table->uuid('purpose_id');
-            $table->string('description')->nullable();
+            $table->text('description')->nullable();
 
             $table->foreign('purpose_id')
                 ->references('id')

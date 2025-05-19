@@ -65,7 +65,7 @@ class CategoryController extends Controller
                     'status' => 'error',
                     'message' => 'Validation error',
                     'errors' => $validator->errors(),
-                ], 400);
+                ], 422);
             }
 
             // $name = Str::title($request->name);

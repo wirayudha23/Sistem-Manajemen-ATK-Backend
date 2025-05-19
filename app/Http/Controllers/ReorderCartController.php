@@ -32,6 +32,7 @@ class ReorderCartController extends Controller
 
             return response()->json([
                 'status' => 'success',
+                'message' => 'Reorder cart list',
                 'data' => $reorderCarts->load('product'),
             ], 200);
         } catch (\Exception $e) {
@@ -54,7 +55,7 @@ class ReorderCartController extends Controller
                     'status' => 'error',
                     'message' => 'Validation error',
                     'errors' => $validator->errors(),
-                ], 400);
+                ], 422);
             }
 
             $product = Product::find($request->product_id);
@@ -64,7 +65,7 @@ class ReorderCartController extends Controller
                 return response()->json([
                     'status' => 'error',
                     'message' => "Product {$product->name} already exists in reorder cart."
-                ], 400);
+                ], 409);
             }
 
             $reorderCart = ReorderCart::create([
@@ -121,7 +122,7 @@ class ReorderCartController extends Controller
                     'status' => 'error',
                     'message' => 'Validation error',
                     'errors' => $validator->errors(),
-                ], 400);
+                ], 422);
             }
 
             $reorderCart = ReorderCart::find($reorder_cart_id);

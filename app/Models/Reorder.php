@@ -11,6 +11,11 @@ class Reorder extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'reorder_date' => 'datetime:Y-m-d H:i:s',
+        'delivery_date' => 'date',
+    ];
+
     protected $fillable = [
         'reorder_date',
         'delivery_date',

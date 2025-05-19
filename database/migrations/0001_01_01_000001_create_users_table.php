@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('position')->nullable();
             $table->string('initial')->unique()->nullable();
             $table->string('role');
+            $table->string('phone_number', 12)->unique()->nullable();
             $table->string('avatar')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
