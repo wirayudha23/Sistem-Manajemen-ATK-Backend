@@ -49,16 +49,24 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'name' => [
-                    'required',
-                    'string',
+            $validator = Validator::make(
+                $request->all(),
+                [
+                    'name' => [
+                        'required',
+                        'string',
 
-                    Rule::unique('categories')->where(function ($query) use ($request) {
-                        $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
-                    }),
+                        Rule::unique('categories')->where(function ($query) use ($request) {
+                            $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
+                        }),
+                    ],
                 ],
-            ]);
+                [
+                    'name.required' => 'Name kategori wajib diisi',
+                    'name.unique' => 'Nama kategori sudah ada',
+                    'name.string' => 'Nama kategori harus berupa tesk'
+                ]
+            );
 
             if ($validator->fails()) {
                 return response()->json([
@@ -76,7 +84,7 @@ class CategoryController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Category created successfully',
+                'message' => 'Kategori berhasil ditambahkan',
                 'data' => $category,
             ], 201);
         } catch (\Exception $e) {
@@ -136,6 +144,11 @@ class CategoryController extends Controller
                             }
                         ),
                 ],
+            ],
+            [
+                'name.required' => 'Name kategori wajib diisi',
+                'name.unique' => 'Nama kategori sudah ada',
+                'name.string' => 'Nama kategori harus berupa tesk'
             ]);
 
             if ($validator->fails()) {
@@ -154,7 +167,7 @@ class CategoryController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Category updated successfully',
+                'message' => 'Kategori berhasil diupdate',
                 'data' => $category,
             ], 200);
 
@@ -174,7 +187,7 @@ class CategoryController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Category deleted successfully',
+                'message' => 'Kategori berhasil dihapus',
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

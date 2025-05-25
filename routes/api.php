@@ -1,10 +1,13 @@
 <?php
 
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CategoryExcelController;
 use App\Http\Controllers\UnitController;
+use App\Http\Controllers\UnitExcelController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\StudyProgramController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserExcelController;
 use App\Http\Controllers\PurposeController;
 use App\Http\Controllers\CheckoutCartController;
 use App\Http\Controllers\CheckoutController;
@@ -46,6 +49,11 @@ Route::apiResource('funds', FundTransactionController::class);
 
 Route::get('/export-checkout', [CheckoutExcelController::class, 'export']);
 Route::post('/import-checkout', [CheckoutExcelController::class, 'import']);
+
+Route::post('/import-category', [CategoryExcelController::class, 'import']);
+Route::post('/import-unit', [UnitExcelController::class, 'import']);
+Route::post('/import-user', [UserExcelController::class, 'import']);
+
 // Route::apiResource('product-received', ProductReceivedController::class);
 
 //middleware

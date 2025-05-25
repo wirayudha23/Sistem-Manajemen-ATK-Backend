@@ -14,6 +14,8 @@ use Carbon\Carbon;
 use App\Models\CheckoutCart;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+
 
 class CheckoutController extends Controller
 {
@@ -54,17 +56,30 @@ class CheckoutController extends Controller
     public function store(Request $request)
     {
         // Validasi input
-        $validator = Validator::make($request->all(), [
-            'user_id' => [
-                'required',
-                Rule::exists('users', 'id')->where(function ($query) {
-                    $query->where('role', 'Staff');
-                }),
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'user_id' => [
+                    'required',
+                    Rule::exists('users', 'id')->where(function ($query) {
+                        $query->where('role', 'Staff');
+                    }),
+                ],
+                'purpose_id' => ['required', Rule::exists('purposes', 'id')],
+                'description' => ['nullable', 'string', 'max:2000'],
+                'checkout_date' => ['required', 'date', 'after_or_equal:today'],
             ],
-            'purpose_id' => ['required', Rule::exists('purposes', 'id')],
-            'description' => ['nullable', 'string', 'max:2000'],
-            'checkout_date' => ['required', 'date', 'after_or_equal:today'],
-        ]);
+            [
+                'user_id.required' => 'Inisial wajib diisi',
+                'user_id.exists' => 'User harus role Staff',
+                'purpose_id.required' => 'Kebutuhan wajib diisi',
+                'purpose_id.exists' => 'Kebutuhan tidak ditemukan',
+                'description.max' => 'Deskripsi tidak boleh lebih dari 2000 karakter',
+                'checkout_date.required' => 'Tanggal pengambilan wajib diisi',
+                'checkout_date.date' => 'Format tanggal pengambilan tidak valid',
+                'checkout_date.after_or_equal' => 'Tanggal pengambilan tidak boleh sebelum hari ini',
+            ]
+        );
 
         if ($validator->fails()) {
             return response()->json([
@@ -79,7 +94,7 @@ class CheckoutController extends Controller
         if ($checkoutCart->isEmpty()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Cart is empty.',
+                'message' => 'Daftar ATK kosong',
             ], 400);
         }
 
@@ -88,7 +103,7 @@ class CheckoutController extends Controller
             // Cek ketersediaan stok
             foreach ($checkoutCart as $item) {
                 if ($item->product->stock < $item->checkout_quantity) {
-                    throw new \Exception('Product ' . $item->product->name . ' out of stock');
+                    throw new \Exception('Product ' . $item->product->name . ' habis.');
                 }
             }
 
@@ -129,7 +144,7 @@ class CheckoutController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Checkout created.',
+                'message' => 'Pengambilan ATK berhasil',
                 'data' => [
                     'checkout_id' => $checkout->id,
                     'checkout_date' => $checkout->checkout_date->toDateTimeString(),
@@ -176,17 +191,45 @@ class CheckoutController extends Controller
 
     public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'user_id' => [
-                'required',
-                Rule::exists('users', 'id')->where(function ($query) {
-                    $query->where('role', 'dosen');
-                }),
+        // Ambil header checkout awal beserta items
+        $checkout = Checkout::with('items')->findOrFail($id);
+        $minDate = Carbon::parse($checkout->checkout_date)->toDateString();
+
+        // 1) Validasi parsial
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'user_id' => [
+                    'sometimes',
+                    'required',
+                    Rule::exists('users', 'id')
+                        ->where(fn($q) => $q->where('role', 'Staff'))
+                ],
+                'purpose_id' => ['sometimes', 'required', Rule::exists('purposes', 'id')],
+                'description' => ['sometimes', 'nullable', 'string', 'max:2000'],
+                'checkout_date' => ['sometimes', 'required', 'date', 'after_or_equal:' . $minDate],
+                'details' => ['sometimes', 'required', 'array'],
+                'details.*.product_id' => ['required_with:details', Rule::exists('products', 'id')],
+                'details.*.checkout_quantity' => ['required_with:details', 'integer', 'min:1'],
             ],
-            'details' => 'required|array',
-            'details.*.product_id' => 'required|exists:products,id',
-            'details.*.checkout_quantity' => 'required|integer|min:1'
-        ]);
+            [
+                'user_id.required' => 'Inisial wajib diisi',
+                'user_id.exists' => 'Inisial tidak ditemukan atau bukan Staff',
+                'purpose_id.required' => 'Kebutuhan wajib diisi',
+                'purpose_id.exists' => 'Kebutuhan tidak ditemukan',
+                'description.max' => 'Deskripsi tidak boleh lebih dari 2000 karakter',
+                'checkout_date.required' => 'Tanggal pengambilan wajib diisi',
+                'checkout_date.date' => 'Format tanggal pengambilan tidak valid',
+                'checkout_date.after_or_equal' => 'Tanggal pengambilan harus sama atau setelah ' . $minDate,
+                'details.required' => 'Daftar detail wajib diisi',
+                'details.array' => 'Format daftar detail tidak valid',
+                'details.*.product_id.required_with' => 'Produk wajib dipilih',
+                'details.*.product_id.exists' => 'Produk tidak ditemukan',
+                'details.*.checkout_quantity.required_with' => 'Jumlah wajib diisi',
+                'details.*.checkout_quantity.integer' => 'Jumlah harus berupa angka',
+                'details.*.checkout_quantity.min' => 'Jumlah minimal 1',
+            ]
+        );
 
         if ($validator->fails()) {
             return response()->json([
@@ -199,82 +242,148 @@ class CheckoutController extends Controller
         DB::beginTransaction();
 
         try {
-            $checkout = Checkout::with('items')->find($id);
+            // Refresh data
+            $checkout = Checkout::with('items')->findOrFail($id);
 
-            if (!$checkout) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Checkout not found',
-                ], 404);
+            // 2) Update header jika ada
+            $dataToUpdate = [];
+            if ($request->has('user_id')) {
+                $dataToUpdate['user_id'] = $request->user_id;
+            }
+            if ($request->has('purpose_id')) {
+                $dataToUpdate['purpose_id'] = $request->purpose_id;
+            }
+            if ($request->has('description')) {
+                $dataToUpdate['description'] = $request->description;
+            }
+            if ($request->has('checkout_date')) {
+                $dataToUpdate['checkout_date'] = Carbon::parse($request->checkout_date)
+                    ->setTimezone('Asia/Jakarta');
+            }
+            if (!empty($dataToUpdate)) {
+                $checkout->update($dataToUpdate);
             }
 
-            // Update user_id
-            $checkout->update(['user_id' => $request->user_id]);
+            // 3) Proses detail & stok hanya bila ada details
+            if ($request->has('details')) {
+                $existing = $checkout->items->keyBy('product_id');
+                $incoming = collect($request->details)->keyBy('product_id');
 
-            $existingDetails = $checkout->items->keyBy('product_id');
-            $requestDetails = collect($request->details)->keyBy('product_id');
-
-            // Proses untuk product yang diupdate/ditambahkan
-            foreach ($request->details as $detail) {
-                $product = Product::find($detail['product_id']);
-
-                // Cek stok untuk product baru atau perubahan quantity
-                if (!$existingDetails->has($detail['product_id'])) {
-                    if ($product->stock < $detail['checkout_quantity']) {
-                        throw new \Exception('Insufficient stock for product ' . $product->name);
-                    }
-                    // Kurangi stok untuk product baru
-                    $product->decrement('stock', $detail['checkout_quantity']);
-                } else {
-                    // Hitung selisih quantity untuk product yang diupdate
-                    $oldQuantity = $existingDetails->get($detail['product_id'])->checkout_quantity;
-                    $quantityDiff = $detail['checkout_quantity'] - $oldQuantity;
-
-                    if ($quantityDiff > 0 && $product->stock < $quantityDiff) {
-                        throw new \Exception('Insufficient stock for product ' . $product->name);
-                    }
-
-                    // Update stok sesuai selisih
-                    $product->decrement('stock', $quantityDiff);
+                // 3a) Cek tidak boleh ada produk baru
+                $newIds = $incoming->keys()->diff($existing->keys());
+                if ($newIds->isNotEmpty()) {
+                    $productNames = Product::whereIn('id', $newIds->toArray())
+                        ->pluck('name')
+                        ->toArray();
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Tidak boleh menambahkan produk baru saat update',
+                        'errors' => [
+                            'details' => ['Produk baru tidak diizinkan: ' . implode(', ', $productNames)]
+                        ],
+                    ], 422);
                 }
 
-                // Update atau create detail
-                CheckoutDetail::updateOrCreate(
-                    [
-                        'checkout_id' => $checkout->id,
-                        'product_id' => $detail['product_id']
-                    ],
-                    ['checkout_quantity' => $detail['checkout_quantity']]
-                );
-            }
+                // 3b) Loop pertama: cek semua stok, kumpulkan error
+                $stockErrors = [];
+                foreach ($request->details as $det) {
+                    $prod = Product::findOrFail($det['product_id']);
+                    $newQty = (int) $det['checkout_quantity'];
+                    $oldQty = $existing[$prod->id]->checkout_quantity;
+                    $diff = $newQty - $oldQty;
+                    $maxQty = $prod->stock + $oldQty;
 
-            // Proses untuk product yang dihapus
-            $removedProducts = $existingDetails->diffKeys($requestDetails);
-            foreach ($removedProducts as $removed) {
-                $product = Product::find($removed->product_id);
-                $product->increment('stock', $removed->checkout_quantity);
-                $removed->delete();
+                    if ($diff > 0 && $prod->stock < $diff) {
+                        $stockErrors[] = "Produk {$prod->name}: Maksimal bisa diambil {$maxQty}, tetapi permintaan {$newQty}.";
+                    }
+                }
+
+                // Jika ada error stok, abort semua
+                if (!empty($stockErrors)) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Stok tidak cukup untuk beberapa produk',
+                        'errors' => [
+                            'details' => $stockErrors
+                        ],
+                    ], 422);
+                }
+
+                // 3c) Loop kedua: stok cukup, lakukan decrement & update detail
+                foreach ($request->details as $det) {
+                    $prod = Product::findOrFail($det['product_id']);
+                    $newQty = (int) $det['checkout_quantity'];
+                    $oldQty = $existing[$prod->id]->checkout_quantity;
+                    $diff = $newQty - $oldQty;
+
+                    if ($diff > 0) {
+                        $prod->decrement('stock', $diff);
+                    } else if ($diff < 0) {
+                        $prod->increment('stock', -$diff);
+                    }
+
+                    CheckoutDetail::updateOrCreate(
+                        ['checkout_id' => $checkout->id, 'product_id' => $prod->id],
+                        ['checkout_quantity' => $newQty]
+                    );
+                }
+
+                // 3d) Hapus detail yang di-remove & rollback stok
+                $toRemove = $existing->diffKeys($incoming);
+                foreach ($toRemove as $old) {
+                    $prod = Product::findOrFail($old->product_id);
+                    $prod->increment('stock', $old->checkout_quantity);
+                    $old->delete();
+                }
             }
 
             DB::commit();
 
+            // 4) Susun dan kirim response sukses
+            $checkout->load('purpose', 'user', 'items.product');
+            $items = $checkout->items->map(fn($d) => [
+                'product_id' => $d->product_id,
+                'product_name' => $d->product->name,
+                'checkout_quantity' => $d->checkout_quantity,
+            ]);
+
             return response()->json([
                 'status' => 'success',
-                'message' => 'Checkout updated successfully',
-                'data' => $checkout->load('items')
+                'message' => 'Checkout berhasil diperbarui',
+                'data' => [
+                    'checkout_id' => $checkout->id,
+                    'checkout_date' => $checkout->checkout_date->toDateTimeString(),
+                    'purpose_name' => $checkout->purpose->name,
+                    'user' => [
+                        'name' => $checkout->user->name,
+                        'role' => $checkout->user->role,
+                    ],
+                    'description' => $checkout->description,
+                    'items' => $items,
+                ],
             ], 200);
+
+        } catch (ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Checkout tidak ditemukan',
+            ], 404);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error updating checkout: ' . $e->getMessage());
-
+            \Log::error('Error updating checkout: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
-                'message' => 'Update failed',
-                'error' => $e->getMessage()
+                'message' => 'Internal server error',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
+
+
 
     public function destroy($id)
     {
@@ -293,7 +402,7 @@ class CheckoutController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Checkout deleted successfully',
+                'message' => 'Pengambilan ATK berhasil dihapus',
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();

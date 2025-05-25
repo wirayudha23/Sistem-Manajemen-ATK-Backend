@@ -58,7 +58,15 @@ class CheckoutCartController extends Controller
             $validator = Validator::make($request->all(), [
                 'product_id' => 'required|exists:products,id',
                 'checkout_quantity' => 'required|integer|min:1',
-            ]);
+            ],
+                [
+                    'product_id.required' => 'Pilih produk',
+                    'product_id.exists' => 'Produk tidak ditemukan',
+                    'checkout_quantity.required' => 'Jumlah pengambilan wajib diisi',
+                    'checkout_quantity.integer' => 'Jumlah pengambilan harus berupa angka',
+                    'checkout_quantity.min' => 'Jumlah pengambilan minimal 1',
+                ]
+            );
 
             if ($validator->fails()) {
                 return response()->json([
@@ -73,14 +81,14 @@ class CheckoutCartController extends Controller
             if ($product->stock < 1) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => "Product {$product->name} is out of stock."
+                    'message' => "Produk {$product->name} habis."
                 ], 409);
             }
 
             if (CheckoutCart::where('product_id', $request->product_id)->exists()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => "Product {$product->name} already in checkout cart."
+                    'message' => "Product {$product->name} sudah ada di daftar ATK",
                 ], 409);
             }
 
@@ -91,7 +99,7 @@ class CheckoutCartController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => "Product {$product->name} added to checkout cart.",
+                'message' => "Product {$product->name} ditambahkan ke daftar ATK",
                 'data' => $checkoutCart,
             ], 201);
         } catch (\Exception $e) {
@@ -140,7 +148,13 @@ class CheckoutCartController extends Controller
 
             $validator = Validator::make($request->all(), [
                 'checkout_quantity' => 'required|integer|min:1',
-            ]);
+            ],
+                [
+                    'checkout_quantity.required' => 'Jumlah pengambilan wajib diisi',
+                    'checkout_quantity.integer' => 'Jumlah pengambilan harus berupa angka',
+                    'checkout_quantity.min' => 'Jumlah pengambilan minimal 1',
+                ]
+            );
 
             if ($validator->fails()) {
                 return response()->json([
@@ -155,7 +169,7 @@ class CheckoutCartController extends Controller
             if ($product->stock < $request->checkout_quantity) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => "Product {$product->name} stock is not enough."
+                    'message' => "Stock {$product->name} tidak cukup."
                 ], 409);
             }
 
@@ -165,7 +179,7 @@ class CheckoutCartController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => "Checkout cart updated successfully",
+                'message' => "Jumlah pengambilan {$product->name} diperbarui",
                 'data' => $checkoutCart->load('product:id,name,price,stock,economic_order_quantity'),
             ], 200);
         } catch (\Exception $e) {
@@ -192,7 +206,7 @@ class CheckoutCartController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => "{$checkoutCart->product->name} removed from checkout cart.",
+                'message' => "{$checkoutCart->product->name} dihapus dari daftar ATK",
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

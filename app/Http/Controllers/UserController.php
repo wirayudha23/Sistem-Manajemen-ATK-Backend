@@ -96,7 +96,52 @@ class UserController extends Controller
                 'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             ];
 
-            $validator = Validator::make($request->all(), $rules);
+            $messages = [
+                'name.required' => 'Nama wajib diisi.',
+                'name.string' => 'Nama harus berupa teks.',
+                'name.unique' => 'Nama sudah digunakan.',
+
+                'email.required' => 'Email wajib diisi.',
+                'email.email' => 'Format email tidak valid.',
+                'email.unique' => 'Email sudah terdaftar.',
+
+                'nip.required' => 'NIP wajib diisi.',
+                'nip.digits' => 'NIP harus terdiri dari :digits digit.',
+                'nip.integer' => 'NIP harus berupa angka.',
+                'nip.unique' => 'NIP sudah terdaftar.',
+
+                'position.required' => 'Posisi wajib dipilih.',
+                'position.in' => 'Posisi yang dipilih tidak valid.',
+
+                'initial.required' => 'Inisial wajib diisi.',
+                'initial.alpha' => 'Inisial hanya boleh huruf.',
+                'initial.size' => 'Inisial harus tepat :size karakter.',
+                'initial.unique' => 'Inisial sudah digunakan.',
+
+                'role.required' => 'Role wajib dipilih.',
+                'role.in' => 'Role yang dipilih tidak sesuai dengan posisi.',
+
+                'phone_number.required_if' => 'No. handphone wajib diisi untuk posisi Rumah Tangga.',
+                'phone_number.string' => 'No. handphone harus berupa teks.',
+                'phone_number.min' => 'No. handphone minimal :min karakter.',
+                'phone_number.max' => 'No. handphone maksimal :max karakter.',
+                'phone_number.unique' => 'No. handphone sudah terdaftar.',
+                'phone_number.regex' => 'No. handphone harus diawali 08 dan berisi 11–12 angka.',
+
+                'study_program_id.required_if' => 'Program studi wajib dipilih untuk posisi Dosen.',
+                'study_program_id.exists' => 'Program studi yang dipilih tidak ditemukan.',
+
+                'avatar.image' => 'Avatar harus berupa file gambar.',
+                'avatar.mimes' => 'Avatar hanya boleh berformat: jpeg, png, jpg, gif, svg.',
+                'avatar.max' => 'Ukuran avatar maksimal :max kilobyte.',
+            ];
+
+
+            $validator = Validator::make(
+                $request->all(),
+                $rules,
+                $messages
+            );
 
             if ($validator->fails()) {
                 return response()->json([
@@ -131,7 +176,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'User created successfully',
+                'message' => 'User berhasil ditambahkan',
                 'data' => $user,
             ], 201);
 
@@ -274,6 +319,36 @@ class UserController extends Controller
                     ],
                 ];
 
+                $messages = [
+                'name.string'                  => 'Nama harus berupa teks.',
+                'name.unique'                  => 'Nama sudah digunakan.',
+
+                'email.email'                  => 'Format email tidak valid.',
+                'email.unique'                 => 'Email sudah terdaftar.',
+
+                'nip.digits'                   => 'NIP harus terdiri dari :digits digit.',
+                'nip.integer'                  => 'NIP harus berupa angka.',
+                'nip.unique'                   => 'NIP sudah terdaftar.',
+
+                'initial.alpha'                => 'Inisial hanya boleh huruf.',
+                'initial.size'                 => 'Inisial harus tepat :size karakter.',
+                'initial.unique'               => 'Inisial sudah digunakan.',
+
+                'position.in'                  => 'Posisi yang dipilih tidak valid.',
+
+                'phone_number.required_if'     => 'No. handphone wajib diisi untuk posisi Rumah Tangga.',
+                'phone_number.min'             => 'No. handphone minimal :min karakter.',
+                'phone_number.max'             => 'No. handphone maksimal :max karakter.',
+                'phone_number.regex'           => 'No. handphone harus diawali 08 dan panjang 11–12 angka.',
+                'phone_number.unique'          => 'No. handphone sudah terdaftar.',
+
+                'study_program_id.exists'      => 'Program studi tidak ditemukan.',
+
+                'avatar.image'                 => 'File harus berupa gambar.',
+                'avatar.mimes'                 => 'Format gambar hanya boleh: jpeg, png, jpg, gif, svg.',
+                'avatar.max'                   => 'Ukuran gambar maksimal :max kilobyte.',
+            ];
+
                 $validator = Validator::make($request->all(), $rules);
 
                 // Conditional checks: keep existing after() logic
@@ -330,7 +405,7 @@ class UserController extends Controller
 
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'User updated successfully',
+                    'message' => 'User berhasil diupdate',
                     'data' => $user,
                 ], 200);
 
@@ -358,7 +433,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'User deleted successfully',
+                'message' => 'User berhasil dihapus',
             ], 200);
         } catch (\Exception $e) {
             Log::error($e->getMessage());

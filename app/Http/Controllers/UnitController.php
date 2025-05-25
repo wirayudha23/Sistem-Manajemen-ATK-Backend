@@ -47,15 +47,23 @@ class UnitController extends Controller
     public function store(Request $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'name' => [
-                    'required',
-                    'string',
-                    Rule::unique('units')->where(function ($query) use ($request) {
-                        $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
-                    }),
+            $validator = Validator::make(
+                $request->all(),
+                [
+                    'name' => [
+                        'required',
+                        'string',
+                        Rule::unique('units')->where(function ($query) use ($request) {
+                            $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
+                        }),
+                    ],
                 ],
-            ]);
+                [
+                    'name.required' => 'Name unit wajib diisi',
+                    'name.unique' => 'Nama unit sudah ada',
+                    'name.string' => 'Nama unit harus berupa tesk'
+                ]
+            );
 
             if ($validator->fails()) {
                 return response()->json([
@@ -71,7 +79,7 @@ class UnitController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Unit created successfully',
+                'message' => 'Unit berhasil ditambahkan',
                 'data' => $unit,
             ], 201);
         } catch (\Exception $e) {
@@ -124,12 +132,18 @@ class UnitController extends Controller
                     'sometimes',
                     'string',
                     Rule::unique('units')
-                    ->ignore($unit->id)
-                    ->where(
-                        function ($query) use ($request) {
-                        $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
-                    }),
+                        ->ignore($unit->id)
+                        ->where(
+                            function ($query) use ($request) {
+                                $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
+                            }
+                        ),
                 ],
+            ],
+            [
+                'name.required' => 'Name unit wajib diisi',
+                'name.unique' => 'Nama unit sudah ada',
+                'name.string' => 'Nama unit harus berupa tesk'
             ]);
 
             if ($validator->fails()) {
@@ -146,7 +160,7 @@ class UnitController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Unit updated successfully',
+                'message' => 'Unit berhasil diupdate',
                 'data' => $unit,
             ], 200);
         } catch (\Exception $e) {
@@ -164,7 +178,7 @@ class UnitController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Unit deleted successfully',
+                'message' => 'Unit berhasil dihapus',
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

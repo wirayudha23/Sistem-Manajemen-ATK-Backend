@@ -64,20 +64,40 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'name' => [
-                    'required',
-                    'string',
-                    Rule::unique('products', 'name')->where(function ($query) use ($request) {
-                        $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
-                    }),
+            $validator = Validator::make(
+                $request->all(),
+                [
+                    'name' => [
+                        'required',
+                        'string',
+                        Rule::unique('products', 'name')->where(function ($query) use ($request) {
+                            $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
+                        }),
+                    ],
+                    'price' => 'required|integer|min:0',
+                    'stock' => 'required|integer|min:0',
+                    'image' => 'required|image|mimes:png,jpg,jpeg|max:2048',
+                    'category_id' => 'required|exists:categories,id',
+                    'unit_id' => 'required|exists:units,id',
                 ],
-                'price' => 'required|integer|min:0',
-                'stock' => 'required|integer|min:0',
-                'image' => 'required|image|mimes:png,jpg,jpeg|max:2048',
-                'category_id' => 'required|exists:categories,id',
-                'unit_id' => 'required|exists:units,id',
-            ]);
+                [
+                    'name.required' => 'Nama product wajib diisi',
+                    'name.unique' => 'Nama product sudah ada',
+                    'name.string' => 'Nama product harus berupa teks',
+                    'price.required' => 'Harga product wajib diisi',
+                    'price.integer' => 'Harga product harus berupa angka',
+                    'price.min' => 'Harga product tidak boleh kurang dari 0',
+                    'stock.required' => 'Stock product wajib diisi',
+                    'stock.integer' => 'Stock product harus berupa angka',
+                    'stock.min' => 'Stock product tidak boleh kurang dari 0',
+                    'image.required' => 'Gambar product wajib diisi',
+                    'image.image' => 'File yang diupload harus berupa gambar',
+                    'image.mimes' => 'Gambar harus berupa png, jpg, atau jpeg',
+                    'image.max' => 'Ukuran gambar tidak boleh lebih dari 2MB',
+                    'category_id.required' => 'Kategori product wajib diisi',
+                    'unit_id.required' => 'Satuan product wajib diisi',
+                ]
+            );
 
             if ($validator->fails()) {
                 return response()->json([
@@ -96,7 +116,7 @@ class ProductController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Product created successfully',
+                'message' => 'Product berhasil ditambahkan',
                 'data' => $product->load('category:id,name', 'unit:id,name'),
             ], 201);
 
@@ -152,14 +172,34 @@ class ProductController extends Controller
             }
 
             // 1. Validasi
-            $validator = Validator::make($request->all(), [
-                'name' => ['sometimes', 'string', Rule::unique('products', 'name')->ignore($product->id)->where(fn($q) => $q->whereRaw('LOWER(name)=?', [strtolower($request->name)]))],
-                'price' => 'sometimes|integer|min:0',
-                'stock' => 'sometimes|integer|min:0',
-                'image' => 'sometimes|image|mimes:png,jpg,jpeg|max:2048',
-                'category_id' => 'sometimes|exists:categories,id',
-                'unit_id' => 'sometimes|exists:units,id',
-            ]);
+            $validator = Validator::make(
+                $request->all(),
+                [
+                    'name' => ['sometimes', 'string', Rule::unique('products', 'name')->ignore($product->id)->where(fn($q) => $q->whereRaw('LOWER(name)=?', [strtolower($request->name)]))],
+                    'price' => 'sometimes|integer|min:0',
+                    'stock' => 'sometimes|integer|min:0',
+                    'image' => 'sometimes|image|mimes:png,jpg,jpeg|max:2048',
+                    'category_id' => 'sometimes|exists:categories,id',
+                    'unit_id' => 'sometimes|exists:units,id',
+                ],
+                [
+                    'name.string' => 'Nama produk harus berupa teks.',
+                    'name.unique' => 'Nama produk sudah ada.',
+
+                    'price.integer' => 'Harga harus berupa angka.',
+                    'price.min' => 'Harga tidak boleh kurang dari :min.',
+
+                    'stock.integer' => 'Stok harus berupa angka.',
+                    'stock.min' => 'Stok tidak boleh kurang dari :min.',
+
+                    'image.image' => 'File harus berupa gambar.',
+                    'image.mimes' => 'Format gambar hanya boleh: png, jpg, jpeg.',
+                    'image.max' => 'Ukuran gambar maksimal :max kilobyte.',
+
+                    'category_id.exists' => 'Kategori tidak ditemukan.',
+                    'unit_id.exists' => 'Satuan tidak ditemukan.',
+                ]
+            );
 
             if ($validator->fails()) {
                 return response()->json([
@@ -187,7 +227,7 @@ class ProductController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Product updated successfully',
+                'message' => 'Product berhasil diupdate',
                 'data' => $product->load('category:id,name', 'unit:id,name'),
             ], 200);
 
@@ -212,7 +252,7 @@ class ProductController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Product deleted successfully',
+                'message' => 'Product berhasil dihapus',
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
