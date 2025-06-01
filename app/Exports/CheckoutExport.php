@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\ProductReceivedDetail;
+use App\Models\CheckoutDetail;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -18,10 +18,8 @@ class CheckoutExport implements FromCollection, WithMapping, WithHeadings, WithC
     protected $counter = 0;
 
     /**
-     * Konstruktor menerima parameter tanggal awal dan tanggal akhir.
-     *
-     * @param string $startDate (format: yyyy-mm-dd)
-     * @param string $endDate   (format: yyyy-mm-dd)
+     * @param string $startDate format yyyy-mm-dd
+     * @param string $endDate   format yyyy-mm-dd
      */
     public function __construct($startDate, $endDate)
     {
@@ -30,45 +28,45 @@ class CheckoutExport implements FromCollection, WithMapping, WithHeadings, WithC
     }
 
     /**
-     * Ambil data detail penerimaan produk (ProductReceivedDetail) yang berelasi dengan ProductReceived.
-     * Data difilter berdasarkan received_date pada model ProductReceived.
+     * Ambil data checkout_details yang berelasi dengan Checkout,
+     * difilter berdasarkan checkout_date antara startDate dan endDate.
      */
     public function collection()
     {
-        return ProductReceivedDetail::with('productReceived', 'product')
-            ->whereHas('productReceived', function ($q) {
-                $q->whereBetween('received_date', [$this->startDate, $this->endDate]);
+        return CheckoutDetail::with(['checkout.user', 'checkout.purpose', 'product'])
+            ->whereHas('checkout', function ($q) {
+                $q->whereDate('checkout_date', '>=', $this->startDate)
+                  ->whereDate('checkout_date', '<=', $this->endDate);
             })
-
-            ->where('received_quantity', '>', 0)
             ->get();
     }
 
     /**
-     * Mapping setiap baris data untuk diekspor ke Excel.
-     * Setiap baris akan menampilkan:
-     * 1. Nomor urut
-     * 2. received_date (diformat 'd-m-Y')
-     * 3. Nama Product (mengambil field name dari relasi product)
-     * 4. received_quantity
-     * 5. price
-     * 6. total_product_price
+     * Mapping setiap baris ke format Excel:
+     * 1. No
+     * 2. checkout_date (d-m-Y)
+     * 3. Nama Produk
+     * 4. checkout_quantity
+     * 5. Nama User
+     * 6. Kebutuhan (purpose name)
+     * 7. Deskripsi
      */
-    public function map($productReceivedDetail): array
+    public function map($detail): array
     {
         $this->counter++;
         return [
             $this->counter,
-            Carbon::parse($productReceivedDetail->productReceived->received_date)->format('d-m-Y'),
-            $productReceivedDetail->product->name,
-            $productReceivedDetail->received_quantity,
-            $productReceivedDetail->price,
-            $productReceivedDetail->total_product_price,
+            Carbon::parse($detail->checkout->checkout_date)->format('d-m-Y'),
+            $detail->product->name,
+            $detail->checkout_quantity,
+            $detail->checkout->user->name,
+            $detail->checkout->purpose->name,
+            $detail->checkout->description,
         ];
     }
 
     /**
-     * Header kolom yang ditampilkan pada baris 3.
+     * Headings di baris 3
      */
     public function headings(): array
     {
@@ -77,13 +75,14 @@ class CheckoutExport implements FromCollection, WithMapping, WithHeadings, WithC
             'Tanggal',
             'Nama Produk',
             'Jumlah',
-            'Harga',
-            'Total Harga Produk',
+            'Nama',
+            'Kebutuhan',
+            'Deskripsi',
         ];
     }
 
     /**
-     * Data dan header akan ditulis mulai dari sel A3.
+     * Mulai tulis data dari sel A3
      */
     public function startCell(): string
     {
@@ -91,49 +90,37 @@ class CheckoutExport implements FromCollection, WithMapping, WithHeadings, WithC
     }
 
     /**
-     * Mendaftarkan event AfterSheet untuk mengatur styling, layout, dan menambahkan total keseluruhan harga.
+     * Styling & layout (merge title, header styling, border, auto-size)
      */
     public function registerEvents(): array
     {
         return [
             AfterSheet::class => function (AfterSheet $event) {
-                $sheet = $event->sheet;
+                $sheet = $event->sheet->getDelegate();
 
-                // --- Judul di Baris 1 ---
-                $title = "Data Penerimaan Produk Periode " .
-                    Carbon::parse($this->startDate)->format('d-m-Y') .
-                    " s/d " .
-                    Carbon::parse($this->endDate)->format('d-m-Y');
-                // Merge judul dari kolom A sampai F
-                $sheet->getDelegate()->mergeCells('A1:F1');
+                // Judul di A1 sampai G1
+                $title = "Data Pengambilan ATK Periode "
+                    . Carbon::parse($this->startDate)->format('d-m-Y')
+                    . " s/d "
+                    . Carbon::parse($this->endDate)->format('d-m-Y');
+
+                $sheet->mergeCells('A1:G1');
                 $sheet->setCellValue('A1', $title);
                 $sheet->getStyle('A1')->applyFromArray([
-                    'font' => [
-                        'bold' => true,
-                        'size' => 14,
-                        'name' => 'Times New Roman',
-                    ],
-                    'alignment' => [
-                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                    ],
+                    'font' => ['bold' => true, 'size' => 14, 'name' => 'Times New Roman'],
+                    'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
                 ]);
 
-                // --- Header di Baris 3 ---
-                // Styling header baris 3: bold, Times New Roman, center alignment, background light gray, border
-                $sheet->getStyle('A3:F3')->applyFromArray([
-                    'font' => [
-                        'bold' => true,
-                        'name' => 'Times New Roman',
-                    ],
+                // Header baris 3
+                $sheet->getStyle('A3:G3')->applyFromArray([
+                    'font' => ['bold' => true, 'name' => 'Times New Roman'],
                     'alignment' => [
                         'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                        'vertical'   => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
                     ],
                     'fill' => [
                         'fillType'   => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                        'startColor' => [
-                            'rgb' => 'D3D3D3',
-                        ],
+                        'startColor' => ['rgb' => 'D3D3D3'],
                     ],
                     'borders' => [
                         'allBorders' => [
@@ -143,86 +130,37 @@ class CheckoutExport implements FromCollection, WithMapping, WithHeadings, WithC
                     ],
                 ]);
 
-                // Tentukan range data (header dan data)
-                $highestRow = $sheet->getDelegate()->getHighestRow();
-                $highestColumn = $sheet->getDelegate()->getHighestColumn();
-                $range = 'A3:' . $highestColumn . $highestRow;
-
-                // Terapkan border pada seluruh tabel data
+                // Border seluruh tabel
+                $highestRow    = $sheet->getHighestRow();
+                $highestColumn = $sheet->getHighestColumn();
+                $range         = 'A3:' . $highestColumn . $highestRow;
                 $sheet->getStyle($range)->applyFromArray([
                     'borders' => [
                         'allBorders' => [
                             'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                            'color' => ['rgb' => '000000'],
+                            'color'       => ['rgb' => '000000'],
                         ],
                     ],
                 ]);
 
-                // --- Styling Kolom Data (Mulai Baris 4) ---
-                // Kolom nomor (A), Received Date (B), Price (E), Total Product Price (F) diberi center alignment.
-                $sheet->getStyle('A4:A' . $highestRow)->applyFromArray([
-                    'alignment' => [
-                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                    ],
-                ]);
-                $sheet->getStyle('B4:B' . $highestRow)->applyFromArray([
-                    'alignment' => [
-                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                    ],
-                ]);
-                $sheet->getStyle('E4:E' . $highestRow)->applyFromArray([
-                    'alignment' => [
-                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                    ],
-                ]);
-                $sheet->getStyle('F4:F' . $highestRow)->applyFromArray([
-                    'alignment' => [
-                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                    ],
-                ]);
-                $sheet->getStyle('D4:D' . $highestRow)->applyFromArray([
-                    'alignment' => [
-                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                    ],
-                ]);
-
-                // Kolom Product Name (C) dan Received Quantity (D) align left
-                $sheet->getStyle('C4:C' . $highestRow)->applyFromArray([
-                    'alignment' => [
-                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT,
-                    ],
-                ]);
-
-                // --- Auto Column Width ---
-                foreach (range('A', $highestColumn) as $col) {
-                    $sheet->getDelegate()->getColumnDimension($col)->setAutoSize(true);
+                // Alignment khusus kolom
+                $sheet->getStyle('A4:A' . $highestRow)
+                      ->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('B4:B' . $highestRow)
+                      ->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('D4:D' . $highestRow)
+                      ->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                // Kolom E (Nama User), F (Kebutuhan), G (Deskripsi) kita ratakan kiri
+                foreach (['C','E','F','G'] as $col) {
+                    $sheet->getStyle("{$col}4:{$col}{$highestRow}")
+                          ->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
                 }
+                // Kolom C (Nama Produk) juga left, sudah termasuk di atas
 
-                // --- Menambahkan Baris Total Keseluruhan Harga di Bawah Data ---
-                // Baris total berada tepat setelah baris data terakhir
-                $totalRow = $highestRow + 1;
-                // Teks "TOTAL" akan kita letakkan di kolom E, total keseluruhan harga di kolom F
-                $sheet->setCellValue('E' . $totalRow, 'TOTAL');
-
-                // Menghitung total keseluruhan harga dari kolom "Total Product Price" (kolom F, mulai baris 4 sampai baris terakhir data)
-                $sheet->setCellValue('F' . $totalRow, '=SUM(F4:F' . $highestRow . ')');
-
-                // Styling untuk baris total
-                $sheet->getStyle('E' . $totalRow . ':F' . $totalRow)->applyFromArray([
-                    'font' => [
-                        'bold' => true,
-                        'name' => 'Times New Roman',
-                    ],
-                    'alignment' => [
-                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                    ],
-                    'borders' => [
-                        'allBorders' => [
-                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                            'color' => ['rgb' => '000000'],
-                        ],
-                    ],
-                ]);
+                // Auto-size kolom
+                foreach (range('A', $highestColumn) as $col) {
+                    $sheet->getColumnDimension($col)->setAutoSize(true);
+                }
             },
         ];
     }

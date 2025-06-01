@@ -68,9 +68,14 @@ class ReorderCartController extends Controller
                 ], 409);
             }
 
+            $eoq = (float) $product->economic_order_quantity;
+            if ($eoq <= 0) {
+                $eoq = 1;
+            }
+
             $reorderCart = ReorderCart::create([
                 'product_id' => $request->product_id,
-                'reorder_quantity' => 1,
+                'reorder_quantity' => $eoq,
             ]);
 
             return response()->json([

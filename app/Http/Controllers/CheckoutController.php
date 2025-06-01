@@ -52,7 +52,6 @@ class CheckoutController extends Controller
 
         }
     }
-
     public function store(Request $request)
     {
         // Validasi input
@@ -67,7 +66,7 @@ class CheckoutController extends Controller
                 ],
                 'purpose_id' => ['required', Rule::exists('purposes', 'id')],
                 'description' => ['nullable', 'string', 'max:2000'],
-                'checkout_date' => ['required', 'date', 'after_or_equal:today'],
+                'checkout_date' => ['nullable', 'date', 'after_or_equal:today'],
             ],
             [
                 'user_id.required' => 'Inisial wajib diisi',
@@ -112,7 +111,9 @@ class CheckoutController extends Controller
                 'user_id' => $request->user_id,
                 'purpose_id' => $request->purpose_id,
                 'description' => $request->description,
-                'checkout_date' => Carbon::parse($request->checkout_date)->setTimezone('Asia/Jakarta'),
+                'checkout_date' => $request->checkout_date
+                    ? Carbon::parse($request->checkout_date)->setTimezone('Asia/Jakarta')
+                    : Carbon::now()->setTimezone('Asia/Jakarta'),
             ]);
 
             // Buat detail checkout dan kurangi stok

@@ -9,8 +9,12 @@
 <body class="d-flex justify-content-center align-items-center vh-100 bg-light">
   <div class="d-flex align-items-center">
     <!-- Gambar di sebelah kiri -->
-    <img src="https://i.redd.it/oh2ho-oh4s-jane-drawings-are-so-adorable-v0-z04jurt1jb1e1.png?width=669&format=png&auto=webp&s=bd47fe63be880364c3d646e014f5e3a77ec7db9c" alt="Logo" class="me-4 rounded" width="400">
-
+    <img
+    src="{{ asset('storage/images/login-art.jpg')}}"
+    alt="Login art"
+    class="me-4 rounded"
+    width="400"
+    >
     {{-- <!-- Video YouTube -->
     <div class="me-4">
       <iframe width="400" height="225" src="https://www.youtube.com/embed/lB8ASupNtlw"

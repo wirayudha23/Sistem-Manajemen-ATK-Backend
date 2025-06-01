@@ -2,7 +2,6 @@
 
 namespace App\Imports;
 
-use App\Models\Category;
 use App\Models\Unit;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
@@ -12,48 +11,62 @@ class UnitImport implements ToCollection, WithHeadingRow
 {
     public array $errors = [];
 
-    /**
-     * Proses koleksi baris dari file XLSX
-     *
-     * @param Collection $rows
-     * @throws \Exception Jika ada duplikat di sheet atau di database
-     */
+    protected array $dataToInsert = [];
+
     public function collection(Collection $rows)
     {
-        $sheetNames = [];
-        $dataToInsert = [];
+        $sheetNamesLower = [];
 
         foreach ($rows as $index => $row) {
-            $rowNumber = $index + 2; // Heading di baris 1, data mulai baris 2
-            $name = trim($row['nama_satuan'] ?? '');
+            $rowNumber = $index + 2; // Baris header di baris 1, data mulai baris 2
 
-            // Validasi kosong
-            if (empty($name)) {
-                $this->errors[] = "Baris {$rowNumber}: kolom 'Nama Satuan' kosong.";
+            // 1. Baca dan trim nama satuan (header Excel: "Nama Satuan")
+            $rawName = trim($row['nama_satuan'] ?? '');
+
+            // Array lokal untuk menampung semua error di baris ini
+            $rowErrors = [];
+
+            // 2. Validasi kosong
+            if ($rawName === '') {
+                $rowErrors[] = "Baris {$rowNumber}: kolom 'Nama Satuan' kosong.";
+            }
+
+            // 3. Jika tidak kosong, cek duplikat di sheet (case‐insensitive)
+            if ($rawName !== '') {
+                $lowerName = mb_strtolower($rawName);
+                if (in_array($lowerName, $sheetNamesLower)) {
+                    $rowErrors[] = "Baris {$rowNumber}: duplikat nama satuan '{$rawName}' di sheet.";
+                } else {
+                    $sheetNamesLower[] = $lowerName;
+                }
+            }
+
+            // 4. Jika tidak kosong, cek duplikat di database (case‐insensitive)
+            if ($rawName !== '') {
+                if (Unit::whereRaw('LOWER(name) = ?', [mb_strtolower($rawName)])->exists()) {
+                    $rowErrors[] = "Baris {$rowNumber}: nama satuan '{$rawName}' sudah ada di database.";
+                }
+            }
+
+            // 5. Jika ada error di baris ini, kumpulkan semua pesan dan lanjut ke baris berikutnya
+            if (! empty($rowErrors)) {
+                foreach ($rowErrors as $errorMsg) {
+                    $this->errors[] = $errorMsg;
+                }
                 continue;
             }
 
-            // Validasi duplikat di sheet
-            if (in_array($name, $sheetNames)) {
-                $this->errors[] = "Baris {$rowNumber}: duplikat nama satuan '{$name}' di sheet.";
-                continue;
-            }
-            $sheetNames[] = $name;
-
-            // Validasi duplikat di database
-            if (Unit::where('name', $name)->exists()) {
-                $this->errors[] = "Baris {$rowNumber}: nama satuan '{$name}' sudah ada di database.";
-                continue;
-            }
-
-            $dataToInsert[] = ['name' => $name];
+            // 6. Jika tidak ada error, siapkan data untuk di‐insert
+            $this->dataToInsert[] = ['name' => $rawName];
         }
 
-        if (count($this->errors) > 0) {
-            throw new \Exception("Import dibatalkan. Ada kesalahan:", 1);
+        // 7. Setelah memproses semua baris, jika ada minimal satu error → batalkan import
+        if (! empty($this->errors)) {
+            throw new \Exception('Import dibatalkan.');
         }
 
-        foreach ($dataToInsert as $data) {
+        // 8. Jika tidak ada error sama sekali, lakukan insert semua data valid
+        foreach ($this->dataToInsert as $data) {
             Unit::create($data);
         }
     }

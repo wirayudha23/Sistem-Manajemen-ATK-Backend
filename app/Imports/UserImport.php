@@ -18,127 +18,129 @@ class UserImport implements ToCollection, WithHeadingRow
         $emails = [];
 
         foreach ($rows as $index => $row) {
-            $rowNumber = $index + 2;
+            $rowNumber = $index + 2; // Header di baris 1, data mulai baris 2
 
-            // Baca dan trim semua kolom mentah
-            $rawPos   = trim($row['position'] ?? '');
+            // 1. Baca dan trim header yang baru:
+            $rawPos     = trim($row['jabatan']      ?? '');
             $rawProgram = trim($row['program_studi'] ?? '');
-            $name     = trim($row['name'] ?? '');
-            $email    = trim($row['email'] ?? '');
-            $nip      = trim($row['nip'] ?? '');
-            $initial  = trim($row['initial'] ?? '');
-            $role     = trim($row['role'] ?? '');
-            $program  = trim($row['program_studi'] ?? '');
-            $phone    = trim($row['phone_number'] ?? '');
+            $name       = trim($row['nama']          ?? '');
+            $email      = trim($row['email']         ?? '');
+            $nip        = trim($row['nip']           ?? '');
+            $initial    = trim($row['inisial']       ?? '');
+            $role       = trim($row['role']          ?? '');
+            $phone      = trim($row['no_hp']         ?? '');
 
-            // Normalisasi position (case-insensitive)
-            $position = ucwords(strtolower($rawPos));
-            // e.g. 'dosen', 'DOSEN', 'DoSeN' → 'Dosen'
+            // Normalisasi (case-insensitive)
+            $position = ucwords(strtolower($rawPos));    // e.g. "jabatan" → "Jabatan"
+            $program  = ucwords(strtolower($rawProgram)); // untuk lookup StudyProgram
 
-            $program = ucwords(strtolower($rawProgram));
+            // Kumpulkan semua error per-baris
+            $rowErrors = [];
 
-            // 1. Pastikan role hanya 'Staff'
+            // 2. Validasi role harus "Staff"
             if (strtolower($role) !== 'staff') {
-                $this->errors[] = "Baris {$rowNumber}: role harus 'Staff'.";
-                continue;
+                $rowErrors[] = "Baris {$rowNumber}: role harus 'Staff'.";
             }
 
-            // 2. Validasi kolom wajib
+            // 3. Validasi kolom wajib: nama, email, nip, jabatan, inisial
             if (!$name || !$email || !$nip || !$position || !$initial) {
-                $this->errors[] = "Baris {$rowNumber}: kolom wajib (name, email, nip, position, initial) kosong.";
-                continue;
+                $rowErrors[] = "Baris {$rowNumber}: kolom wajib (nama, email, nip, jabatan, inisial) belum lengkap.";
             }
 
-            // 3. Validasi position termasuk dalam daftar
+            // 4. Validasi jabatan
             $allowedPositions = ['Dosen', 'Tendik', 'Rumah Tangga'];
-            if (! in_array($position, $allowedPositions)) {
-                $this->errors[] = "Baris {$rowNumber}: posisi '{$rawPos}' tidak valid.";
-                continue;
+            if ($position && ! in_array($position, $allowedPositions)) {
+                $rowErrors[] = "Baris {$rowNumber}: jabatan '{$rawPos}' tidak valid.";
             }
 
-            // 4. Validasi format email
-            if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $this->errors[] = "Baris {$rowNumber}: format email '{$email}' tidak valid.";
-                continue;
+            // 5. Validasi email
+            if ($email && ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $rowErrors[] = "Baris {$rowNumber}: format email '{$email}' tidak valid.";
             }
 
-            // 5. Cek duplikat di sheet & database
-            if (in_array(strtolower($email), $emails)) {
-                $this->errors[] = "Baris {$rowNumber}: duplikat email '{$email}' di sheet.";
-                continue;
-            }
-            $emails[] = strtolower($email);
-
-            if (User::where('email', $email)->exists()) {
-                $this->errors[] = "Baris {$rowNumber}: email '{$email}' sudah terdaftar.";
-                continue;
-            }
-            if (User::where('name', $name)->exists()) {
-                $this->errors[] = "Baris {$rowNumber}: name '{$name}' sudah ada.";
-                continue;
-            }
-            if (User::where('nip', $nip)->exists()) {
-                $this->errors[] = "Baris {$rowNumber}: nip '{$nip}' sudah ada.";
-                continue;
-            }
-            if (User::where('initial', $initial)->exists()) {
-                $this->errors[] = "Baris {$rowNumber}: initial '{$initial}' sudah ada.";
-                continue;
+            // 6. Cek duplikat email di sheet & database
+            if ($email) {
+                if (in_array(strtolower($email), $emails)) {
+                    $rowErrors[] = "Baris {$rowNumber}: duplikat email '{$email}' di sheet.";
+                }
+                if (User::whereRaw('LOWER(email) = ?', [strtolower($email)])->exists()) {
+                    $rowErrors[] = "Baris {$rowNumber}: email '{$email}' sudah terdaftar.";
+                }
             }
 
-            // 6. Phone only for Rumah Tangga
+            // 7. Cek duplikat nama, nip, inisial di database
+            if ($name && User::whereRaw('LOWER(name) = ?', [strtolower($name)])->exists()) {
+                $rowErrors[] = "Baris {$rowNumber}: nama '{$name}' sudah ada.";
+            }
+            if ($nip && User::where('nip', $nip)->exists()) {
+                $rowErrors[] = "Baris {$rowNumber}: nip '{$nip}' sudah ada.";
+            }
+            if ($initial && User::whereRaw('LOWER(initial) = ?', [strtolower($initial)])->exists()) {
+                $rowErrors[] = "Baris {$rowNumber}: inisial '{$initial}' sudah ada.";
+            }
+
+            // Setelah cek di database, tambahkan ke array $emails agar pengecekan duplikat sheet benar
+            if ($email && ! in_array(strtolower($email), $emails)) {
+                $emails[] = strtolower($email);
+            }
+
+            // 8. Phone hanya untuk "Rumah Tangga"
+            $phoneNumber = null;
             if ($position === 'Rumah Tangga') {
                 if (empty($phone)) {
-                    $this->errors[] = "Baris {$rowNumber}: phone_number wajib untuk posisi Rumah Tangga.";
-                    continue;
+                    $rowErrors[] = "Baris {$rowNumber}: No HP wajib untuk jabatan Rumah Tangga.";
+                } elseif (! preg_match('/^08\d{9,10}$/', $phone)) {
+                    $rowErrors[] = "Baris {$rowNumber}: format No HP '{$phone}' tidak valid.";
+                } elseif (User::whereRaw('LOWER(phone_number) = ?', [strtolower($phone)])->exists()) {
+                    $rowErrors[] = "Baris {$rowNumber}: No HP '{$phone}' sudah ada.";
+                } else {
+                    $phoneNumber = $phone;
                 }
-                if (! preg_match('/^08\d{9,10}$/', $phone)) {
-                    $this->errors[] = "Baris {$rowNumber}: format phone_number '{$phone}' tidak valid.";
-                    continue;
-                }
-                if (User::where('phone_number', $phone)->exists()) {
-                    $this->errors[] = "Baris {$rowNumber}: phone_number '{$phone}' sudah ada.";
-                    continue;
-                }
-            } else {
-                $phone = null;
             }
 
-            // 7. Lookup Program Studi by name (case‐insensitive)
+            // 9. Lookup Program Studi (khusus jabatan "Dosen")
+            $programId = null;
             if ($position === 'Dosen') {
                 if (empty($program)) {
-                    $this->errors[] = "Baris {$rowNumber}: Program Studi wajib untuk posisi Dosen.";
-                    continue;
+                    $rowErrors[] = "Baris {$rowNumber}: Program Studi wajib untuk jabatan Dosen.";
+                } else {
+                    // Tabel study_programs kolomnya "name"
+                    $sp = StudyProgram::whereRaw('LOWER(name) = ?', [strtolower($program)])->first();
+                    if (! $sp) {
+                        $rowErrors[] = "Baris {$rowNumber}: Program Studi '{$program}' tidak ditemukan.";
+                    } else {
+                        $programId = $sp->id;
+                    }
                 }
-                $sp = StudyProgram::whereRaw('LOWER(name) = ?', [strtolower($program)])->first();
-                if (! $sp) {
-                    $this->errors[] = "Baris {$rowNumber}: Program Studi '{$program}' tidak ditemukan.";
-                    continue;
-                }
-                $programId = $sp->id;
-            } else {
-                $programId = null;
             }
 
-            // Siapkan data untuk di-insert
+            // 10. Jika ada error, kumpulkan ke $this->errors lalu lanjutkan ke baris selanjutnya
+            if (! empty($rowErrors)) {
+                foreach ($rowErrors as $errorMsg) {
+                    $this->errors[] = $errorMsg;
+                }
+                continue;
+            }
+
+            // 11. Jika valid, siapkan data untuk di-insert
             $this->dataToInsert[] = [
-                'name'             => $name,
+                'name'             => $name,           // kolom di DB: name
                 'email'            => $email,
                 'nip'              => $nip,
                 'position'         => $position,
                 'initial'          => $initial,
-                'role'             => 'Staff',      // pasti Staff
-                'phone_number'     => $phone,
+                'role'             => 'Staff',
+                'phone_number'     => $phoneNumber,
                 'study_program_id' => $programId,
             ];
         }
 
-        // Abort jika ada error
+        // 12. Jika ada error, batalkan semua
         if (count($this->errors)) {
             throw new \Exception('Import dibatalkan.');
         }
 
-        // Simpan semua data
+        // 13. Simpan semua data valid
         foreach ($this->dataToInsert as $data) {
             User::create($data);
         }

@@ -5,6 +5,7 @@ use App\Http\Controllers\CategoryExcelController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UnitExcelController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductExcelController;
 use App\Http\Controllers\StudyProgramController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserExcelController;
@@ -53,6 +54,7 @@ Route::post('/import-checkout', [CheckoutExcelController::class, 'import']);
 Route::post('/import-category', [CategoryExcelController::class, 'import']);
 Route::post('/import-unit', [UnitExcelController::class, 'import']);
 Route::post('/import-user', [UserExcelController::class, 'import']);
+Route::post('/import-product', [ProductExcelController::class, 'import']);
 
 // Route::apiResource('product-received', ProductReceivedController::class);
 

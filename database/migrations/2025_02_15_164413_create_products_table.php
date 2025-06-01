@@ -18,7 +18,7 @@ return new class extends Migration {
             $table->decimal('economic_order_quantity', 10, 2)->nullable()->default(0);
             $table->decimal('safety_stock', 10, 2)->nullable()->default(0);
             $table->decimal('reorder_point', 10, 2)->nullable()->default(0);
-            $table->string('image');
+            $table->string('image')->default('image/login-art.jpg');
 
             $table->uuid('category_id');
             $table->uuid('unit_id');

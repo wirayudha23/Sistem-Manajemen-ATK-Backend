@@ -10,49 +10,62 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 class CategoryImport implements ToCollection, WithHeadingRow
 {
     public array $errors = [];
+    protected array $dataToInsert = [];
 
-    /**
-     * Proses koleksi baris dari file XLSX
-     *
-     * @param Collection $rows
-     * @throws \Exception Jika ada duplikat di sheet atau di database
-     */
     public function collection(Collection $rows)
     {
-        $sheetNames = [];
-        $dataToInsert = [];
+        $sheetNamesLower = [];
 
         foreach ($rows as $index => $row) {
             $rowNumber = $index + 2; // Heading di baris 1, data mulai baris 2
-            $name = trim($row['nama_kategori'] ?? '');
 
-            // Validasi kosong
-            if (empty($name)) {
-                $this->errors[] = "Baris {$rowNumber}: kolom 'Nama Kategori' kosong.";
+            // 1. Baca dan trim nama kategori (header Excel: "Nama Kategori")
+            $rawName = trim($row['nama_kategori'] ?? '');
+
+            // 2. Siapkan array lokal untuk menampung semua error di baris ini
+            $rowErrors = [];
+
+            // 3. Validasi kosong
+            if ($rawName === '') {
+                $rowErrors[] = "Baris {$rowNumber}: kolom 'Nama Kategori' kosong.";
+            }
+
+            // 4. Validasi duplikat di sheet (case‐insensitive)
+            if ($rawName !== '') {
+                $lowerName = mb_strtolower($rawName);
+                if (in_array($lowerName, $sheetNamesLower)) {
+                    $rowErrors[] = "Baris {$rowNumber}: duplikat nama kategori '{$rawName}' di sheet.";
+                } else {
+                    $sheetNamesLower[] = $lowerName;
+                }
+            }
+
+            // 5. Validasi duplikat di database
+            if ($rawName !== '') {
+                if (Category::whereRaw('LOWER(name) = ?', [mb_strtolower($rawName)])->exists()) {
+                    $rowErrors[] = "Baris {$rowNumber}: nama kategori '{$rawName}' sudah ada di database.";
+                }
+            }
+
+            // 6. Jika ada error di baris ini, pindahkan semua ke $this->errors dan lewati insert
+            if (! empty($rowErrors)) {
+                foreach ($rowErrors as $msg) {
+                    $this->errors[] = $msg;
+                }
                 continue;
             }
 
-            // Validasi duplikat di sheet
-            if (in_array($name, $sheetNames)) {
-                $this->errors[] = "Baris {$rowNumber}: duplikat nama kategori '{$name}' di sheet.";
-                continue;
-            }
-            $sheetNames[] = $name;
-
-            // Validasi duplikat di database
-            if (Category::where('name', $name)->exists()) {
-                $this->errors[] = "Baris {$rowNumber}: nama kategori '{$name}' sudah ada di database.";
-                continue;
-            }
-
-            $dataToInsert[] = ['name' => $name];
+            // 7. Jika tidak ada error, simpan ke array untuk di‐insert nanti
+            $this->dataToInsert[] = ['name' => $rawName];
         }
 
-        if (count($this->errors) > 0) {
-            throw new \Exception("Import dibatalkan. Ada kesalahan:", 1);
+        // 8. Setelah memproses semua baris, jika ada error → batalkan import
+        if (! empty($this->errors)) {
+            throw new \Exception('Import dibatalkan.');
         }
 
-        foreach ($dataToInsert as $data) {
+        // 9. Jika tidak ada error sama sekali, lakukan insert semua
+        foreach ($this->dataToInsert as $data) {
             Category::create($data);
         }
     }

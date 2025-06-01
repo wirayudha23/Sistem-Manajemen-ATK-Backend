@@ -10,6 +10,10 @@ class Checkout extends Model
 {
     use HasFactory;
 
+    // protected $casts = [
+    //     'checkout_date' => 'date',
+    // ];
+
     protected $fillable = [
         'user_id',
         'purpose_id',
