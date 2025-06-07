@@ -51,11 +51,11 @@ class WhatsAppService
         //     : Carbon::parse($reorder->delivery_date);
 
         $lines = [
-            '*✅ Reorder Confirmation*',
-            'Reorder Date : ' . $reorder->reorder_date->toDateString(),
-            'Delivery Date: ' . $reorder->delivery_date->toDateString(),
+            '*✅ Permintaan Pengadaan Barang*',
+            'Tanggal Permintaan : ' . $reorder->reorder_date->format('d M Y'),
+            'Tanggal Diharapkan : ' . $reorder->delivery_date->format('d M Y'),
             '',
-            '*Items:*',
+            '*Barang:*',
         ];
 
         foreach ($reorder->items as $detail) {
@@ -75,15 +75,20 @@ class WhatsAppService
     public function sendMessage(string $to, string $message): array
     {
         $response = $this->client->post('/send', [
-            'headers' => [
-                'Authorization' => $this->token,
-            ],
-            'form_params' => [
-                'target' => $to,
-                'message' => $message,
-            ],
+            'headers' => ['Authorization' => $this->token,],
+            'form_params' => ['target' => $to, 'message' => $message,],
+            'http_errors' => true,
         ]);
 
-        return json_decode((string) $response->getBody(), true);
+        $body = json_decode((string) $response->getBody(), true);
+        \Log::debug('[FONNTE RESPONSE]', $body);
+
+        if (($body['status'] ?? false) !== true) {
+        // ambil 'detail' kalau ada, atau dump seluruh body
+        $err = $body['detail'] ?? json_encode($body);
+        throw new \RuntimeException('Fonnte API error: ' . $err);
+    }
+
+        return $body;
     }
 }
