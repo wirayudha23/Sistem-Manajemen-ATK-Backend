@@ -208,8 +208,8 @@ class CheckoutController extends Controller
                 ],
                 'purpose_id' => ['sometimes', 'required', Rule::exists('purposes', 'id')],
                 'description' => ['sometimes', 'nullable', 'string', 'max:2000'],
-                'checkout_date' => ['sometimes', 'required', 'date', 'after_or_equal:' . $minDate],
-                'details' => ['sometimes', 'required', 'array'],
+                // 'checkout_date' => ['sometimes', 'required', 'date', 'after_or_equal:' . $minDate],
+                'details' => ['sometimes', 'array'],
                 'details.*.product_id' => ['required_with:details', Rule::exists('products', 'id')],
                 'details.*.checkout_quantity' => ['required_with:details', 'integer', 'min:1'],
             ],
@@ -219,10 +219,10 @@ class CheckoutController extends Controller
                 'purpose_id.required' => 'Kebutuhan wajib diisi',
                 'purpose_id.exists' => 'Kebutuhan tidak ditemukan',
                 'description.max' => 'Deskripsi tidak boleh lebih dari 2000 karakter',
-                'checkout_date.required' => 'Tanggal pengambilan wajib diisi',
-                'checkout_date.date' => 'Format tanggal pengambilan tidak valid',
-                'checkout_date.after_or_equal' => 'Tanggal pengambilan harus sama atau setelah ' . $minDate,
-                'details.required' => 'Daftar detail wajib diisi',
+                // 'checkout_date.required' => 'Tanggal pengambilan wajib diisi',
+                // 'checkout_date.date' => 'Format tanggal pengambilan tidak valid',
+                // 'checkout_date.after_or_equal' => 'Tanggal pengambilan harus sama atau setelah ' . $minDate,
+                // 'details.required' => 'Daftar detail wajib diisi',
                 'details.array' => 'Format daftar detail tidak valid',
                 'details.*.product_id.required_with' => 'Produk wajib dipilih',
                 'details.*.product_id.exists' => 'Produk tidak ditemukan',
@@ -257,10 +257,10 @@ class CheckoutController extends Controller
             if ($request->has('description')) {
                 $dataToUpdate['description'] = $request->description;
             }
-            if ($request->has('checkout_date')) {
-                $dataToUpdate['checkout_date'] = Carbon::parse($request->checkout_date)
-                    ->setTimezone('Asia/Jakarta');
-            }
+            // if ($request->has('checkout_date')) {
+            //     $dataToUpdate['checkout_date'] = Carbon::parse($request->checkout_date)
+            //         ->setTimezone('Asia/Jakarta');
+            // }
             if (!empty($dataToUpdate)) {
                 $checkout->update($dataToUpdate);
             }
@@ -338,6 +338,18 @@ class CheckoutController extends Controller
                     $prod->increment('stock', $old->checkout_quantity);
                     $old->delete();
                 }
+
+                $checkout->load('items');
+                if ($checkout->items->isEmpty()) {
+                    // Jika tidak ada item, hapus checkout
+                    $checkout->delete();
+
+                    DB::commit();
+                    return response()->json([
+                        'status' => 'success',
+                        'message' => 'Checkout dihapus karena tidak ada lagi produk pada detail.',
+                    ], 200);
+                }
             }
 
             DB::commit();
@@ -355,7 +367,7 @@ class CheckoutController extends Controller
                 'message' => 'Checkout berhasil diperbarui',
                 'data' => [
                     'checkout_id' => $checkout->id,
-                    'checkout_date' => $checkout->checkout_date->toDateTimeString(),
+                    'checkout_date' => $checkout->checkout_date,
                     'purpose_name' => $checkout->purpose->name,
                     'user' => [
                         'name' => $checkout->user->name,
@@ -383,8 +395,6 @@ class CheckoutController extends Controller
             ], 500);
         }
     }
-
-
 
     public function destroy($id)
     {

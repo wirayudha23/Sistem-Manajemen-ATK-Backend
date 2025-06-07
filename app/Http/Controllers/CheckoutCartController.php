@@ -85,6 +85,13 @@ class CheckoutCartController extends Controller
                 ], 409);
             }
 
+            if ($request->checkout_quantity > $product->stock) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Stock {$product->name} tidak cukup."
+                ], 409);
+            }
+
             if (CheckoutCart::where('product_id', $request->product_id)->exists()) {
                 return response()->json([
                     'status' => 'error',
