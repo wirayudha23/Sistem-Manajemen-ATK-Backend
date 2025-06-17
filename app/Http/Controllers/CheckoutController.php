@@ -15,6 +15,8 @@ use App\Models\CheckoutCart;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Mail\CheckoutMail;
+use Illuminate\Support\Facades\Mail;
 
 
 class CheckoutController extends Controller
@@ -143,9 +145,12 @@ class CheckoutController extends Controller
                 ];
             });
 
+            Mail::to($checkout->user->email)
+                ->send(new CheckoutMail($checkout));
+
             return response()->json([
                 'status' => 'success',
-                'message' => 'Pengambilan ATK berhasil',
+                'message' => 'Pengambilan ATK berhasil dan email terkirim',
                 'data' => [
                     'checkout_id' => $checkout->id,
                     'checkout_date' => $checkout->checkout_date->toDateTimeString(),
@@ -200,12 +205,12 @@ class CheckoutController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                'user_id' => [
-                    'sometimes',
-                    'required',
-                    Rule::exists('users', 'id')
-                        ->where(fn($q) => $q->where('role', 'Staff'))
-                ],
+                // 'user_id' => [
+                //     'sometimes',
+                //     'required',
+                //     Rule::exists('users', 'id')
+                //         ->where(fn($q) => $q->where('role', 'Staff'))
+                // ],
                 'purpose_id' => ['sometimes', 'required', Rule::exists('purposes', 'id')],
                 'description' => ['sometimes', 'nullable', 'string', 'max:2000'],
                 // 'checkout_date' => ['sometimes', 'required', 'date', 'after_or_equal:' . $minDate],
@@ -214,8 +219,8 @@ class CheckoutController extends Controller
                 'details.*.checkout_quantity' => ['required_with:details', 'integer', 'min:1'],
             ],
             [
-                'user_id.required' => 'Inisial wajib diisi',
-                'user_id.exists' => 'Inisial tidak ditemukan atau bukan Staff',
+                // 'user_id.required' => 'Inisial wajib diisi',
+                // 'user_id.exists' => 'Inisial tidak ditemukan atau bukan Staff',
                 'purpose_id.required' => 'Kebutuhan wajib diisi',
                 'purpose_id.exists' => 'Kebutuhan tidak ditemukan',
                 'description.max' => 'Deskripsi tidak boleh lebih dari 2000 karakter',
@@ -248,9 +253,9 @@ class CheckoutController extends Controller
 
             // 2) Update header jika ada
             $dataToUpdate = [];
-            if ($request->has('user_id')) {
-                $dataToUpdate['user_id'] = $request->user_id;
-            }
+            // if ($request->has('user_id')) {
+            //     $dataToUpdate['user_id'] = $request->user_id;
+            // }
             if ($request->has('purpose_id')) {
                 $dataToUpdate['purpose_id'] = $request->purpose_id;
             }
@@ -347,7 +352,7 @@ class CheckoutController extends Controller
                     DB::commit();
                     return response()->json([
                         'status' => 'success',
-                        'message' => 'Checkout dihapus karena tidak ada lagi produk pada detail.',
+                        'message' => 'Checkout dihapus karena tidak ada item',
                     ], 200);
                 }
             }

@@ -47,6 +47,11 @@ class User extends Authenticatable
         return $this->belongsTo(StudyProgram::class, 'study_program_id');
     }
 
+    public function reorders()
+    {
+        return $this->hasMany(Reorder::class);
+    }
+
     public $incrementing = false;
 
     protected $keyType = 'string';

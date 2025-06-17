@@ -11,6 +11,12 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->uuid('reorder_id');
             $table->date('received_date');
+            $table->enum('received_status', [
+                'pending',
+                'barang_tidak_tersedia',
+                'selesai',
+                'diretur'
+            ])->default('selesai');
             $table->integer('total_received_price')->default(0);
             $table->timestamps();
 

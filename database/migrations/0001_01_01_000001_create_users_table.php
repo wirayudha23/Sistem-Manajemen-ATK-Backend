@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('name')->unique();
             $table->string('email')->unique();
             $table->integer('nip')->unique()->nullable();
-            $table->string('position')->nullable();
+            $table->string('position');
             $table->string('initial')->unique()->nullable();
             $table->string('role');
             $table->string('phone_number', 12)->unique()->nullable();

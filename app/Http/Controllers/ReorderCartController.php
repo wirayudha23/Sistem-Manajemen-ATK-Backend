@@ -48,6 +48,10 @@ class ReorderCartController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'product_id' => 'required|exists:products,id',
+            ],
+            [
+                'product_id.required' => 'Pilih produk yang akan dipesan ulang.',
+                'product_id.exists' => 'Produk yang dipilih tidak ditemukan.',
             ]);
 
             if ($validator->fails()) {
@@ -64,23 +68,23 @@ class ReorderCartController extends Controller
             if ($exist) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => "Product {$product->name} already exists in reorder cart."
+                    'message' => "Product {$product->name} sudah ada di keranjang"
                 ], 409);
             }
 
-            $eoq = (float) $product->economic_order_quantity;
-            if ($eoq <= 0) {
-                $eoq = 1;
-            }
+            // $eoq = (float) $product->economic_order_quantity;
+            // if ($eoq <= 0) {
+            //     $eoq = 1;
+            // }
 
             $reorderCart = ReorderCart::create([
                 'product_id' => $request->product_id,
-                'reorder_quantity' => $eoq,
+                'reorder_quantity' => $product->economic_order_quantity,
             ]);
 
             return response()->json([
                 'status' => 'success',
-                'message' => "Product {$product->name} added to reorder cart.",
+                'message' => "Product {$product->name} berhasil ditambahkan ke keranjang",
                 'data' => $reorderCart,
             ], 201);
         } catch (\Exception $e) {
@@ -120,6 +124,11 @@ class ReorderCartController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'reorder_quantity' => 'required|integer|min:1',
+            ],
+            [
+                'reorder_quantity.required' => 'Jumlah pemesanan ulang harus diisi.',
+                'reorder_quantity.integer' => 'Jumlah pemesanan ulang harus berupa angka.',
+                'reorder_quantity.min' => 'Jumlah pemesanan ulang minimal 1.',
             ]);
 
             if ($validator->fails()) {
@@ -144,7 +153,7 @@ class ReorderCartController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Reorder cart updated',
+                'message' => "Jumlah {$reorderCart->product->name} berhasil diperbarui",
                 'data' => $reorderCart->load('product'),
             ], 200);
         } catch (\Exception $e) {
@@ -171,7 +180,7 @@ class ReorderCartController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => "{$reorderCart->product->name} removed from reorder cart",
+                'message' => "{$reorderCart->product->name} berhasil dihapus dari keranjang",
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

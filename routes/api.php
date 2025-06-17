@@ -15,6 +15,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CheckoutExcelController;
 use App\Http\Controllers\ReorderCartController;
 use App\Http\Controllers\ReorderController;
+use App\Http\Controllers\ReorderWhatsappController;
 use App\Http\Controllers\ProductReceivedController;
 use App\Http\Controllers\FundTransactionController;
 use App\Http\Controllers\SocialiteController;
@@ -45,6 +46,9 @@ Route::apiResource('checkout-carts', CheckoutCartController::class);
 Route::apiResource('checkouts', CheckoutController::class);
 Route::apiResource('reorder-carts', ReorderCartController::class);
 Route::apiResource('reorders', ReorderController::class);
+Route::post('/reorders/{reorder}/send', [ReorderWhatsappController::class, 'send']);
+Route::post('/reorders/{reorder}/cancel', [ReorderWhatsappController::class, 'cancel'])->name('reorders.cancelWhatsapp');
+Route::post('/reorders/{reorder}/update', [ReorderWhatsappController::class, 'sendUpdate'])->name('reorders.updateWhatsapp');
 Route::apiResource('product-received', ProductReceivedController::class);
 Route::apiResource('funds', FundTransactionController::class);
 

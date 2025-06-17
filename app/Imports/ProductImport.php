@@ -2,12 +2,12 @@
 
 namespace App\Imports;
 
-use App\Models\Category;
-use App\Models\Unit;
-use App\Models\Product;
-use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Illuminate\Support\Collection;
+use App\Models\Product;
+use App\Models\Category;
+use App\Models\Unit;
 
 class ProductImport implements ToCollection, WithHeadingRow
 {
@@ -26,28 +26,24 @@ class ProductImport implements ToCollection, WithHeadingRow
             // Baris Excel sebenarnya berada di index+2 (karena baris 1 header)
             $rowNumber = $index + 2;
 
-            // 1. Baca dan trim semua kolom sesuai header baru:
-            //    Excel header: "Nama Produk" | "Harga" | "Stok" | "Kategori" | "Satuan"
+            // 1. Baca dan trim kolom sesuai header:
+            //    Excel header: "Nama Produk" | "Harga" | "Kategori" | "Satuan"
             //    Dikonversi oleh WithHeadingRow menjadi keys:
-            //      'nama_produk', 'harga', 'stok', 'kategori', 'satuan'
+            //      'nama_produk', 'harga', 'kategori', 'satuan'
             $rawName         = trim($row['nama_produk'] ?? '');
             $rawPrice        = trim($row['harga']      ?? '');
-            $rawStock        = trim($row['stok']       ?? '');
             $rawCategoryName = trim($row['kategori']   ?? '');
             $rawUnitName     = trim($row['satuan']     ?? '');
 
             // Array untuk menampung error di baris ini
             $rowErrors = [];
 
-            // 2. Validasi kolom wajib (kecuali kolom "no" jika ada)
+            // 2. Validasi kolom wajib (kecuali stok, karena tidak di‐import)
             if ($rawName === '') {
                 $rowErrors[] = "Baris {$rowNumber}: kolom 'Nama Produk' wajib diisi.";
             }
             if ($rawPrice === '') {
                 $rowErrors[] = "Baris {$rowNumber}: kolom 'Harga' wajib diisi.";
-            }
-            if ($rawStock === '') {
-                $rowErrors[] = "Baris {$rowNumber}: kolom 'Stok' wajib diisi.";
             }
             if ($rawCategoryName === '') {
                 $rowErrors[] = "Baris {$rowNumber}: kolom 'Kategori' wajib diisi.";
@@ -57,34 +53,18 @@ class ProductImport implements ToCollection, WithHeadingRow
             }
 
             // 3. Validasi format Harga (harus integer ≥ 0)
+            $price = null;
             if ($rawPrice !== '') {
                 if (! is_numeric($rawPrice) || intval($rawPrice) != $rawPrice) {
                     $rowErrors[] = "Baris {$rowNumber}: Harga '{$rawPrice}' harus berupa bilangan bulat.";
                 } elseif (intval($rawPrice) < 0) {
                     $rowErrors[] = "Baris {$rowNumber}: Harga '{$rawPrice}' tidak boleh kurang dari 0.";
+                } else {
+                    $price = intval($rawPrice);
                 }
             }
 
-            // 4. Validasi format Stok (harus integer ≥ 0)
-            if ($rawStock !== '') {
-                if (! is_numeric($rawStock) || intval($rawStock) != $rawStock) {
-                    $rowErrors[] = "Baris {$rowNumber}: Stok '{$rawStock}' harus berupa bilangan bulat.";
-                } elseif (intval($rawStock) < 0) {
-                    $rowErrors[] = "Baris {$rowNumber}: Stok '{$rawStock}' tidak boleh kurang dari 0.";
-                }
-            }
-
-            // Konversi harga & stok ke integer (jika valid)
-            $price = null;
-            $stock = null;
-            if ($rawPrice !== '' && is_numeric($rawPrice) && intval($rawPrice) == $rawPrice) {
-                $price = intval($rawPrice);
-            }
-            if ($rawStock !== '' && is_numeric($rawStock) && intval($rawStock) == $rawStock) {
-                $stock = intval($rawStock);
-            }
-
-            // 5. Cek duplikat Nama Produk di dalam sheet (case‐insensitive)
+            // 4. Cek duplikat Nama Produk di dalam sheet (case‐insensitive)
             if ($rawName !== '') {
                 $lowerName = mb_strtolower($rawName);
                 if (in_array($lowerName, $sheetNamesLower)) {
@@ -94,7 +74,7 @@ class ProductImport implements ToCollection, WithHeadingRow
                 }
             }
 
-            // 6. Cek duplikat Nama Produk di database (case‐insensitive)
+            // 5. Cek duplikat Nama Produk di database (case‐insensitive)
             if ($rawName !== '') {
                 $existsInDb = Product::whereRaw('LOWER(name) = ?', [mb_strtolower($rawName)])->exists();
                 if ($existsInDb) {
@@ -102,7 +82,7 @@ class ProductImport implements ToCollection, WithHeadingRow
                 }
             }
 
-            // 7. Validasi keberadaan Kategori di tabel categories
+            // 6. Validasi keberadaan Kategori di tabel categories
             $category = null;
             if ($rawCategoryName !== '') {
                 $category = Category::whereRaw('LOWER(name) = ?', [mb_strtolower($rawCategoryName)])->first();
@@ -111,7 +91,7 @@ class ProductImport implements ToCollection, WithHeadingRow
                 }
             }
 
-            // 8. Validasi keberadaan Satuan di tabel units
+            // 7. Validasi keberadaan Satuan di tabel units
             $unit = null;
             if ($rawUnitName !== '') {
                 $unit = Unit::whereRaw('LOWER(name) = ?', [mb_strtolower($rawUnitName)])->first();
@@ -120,7 +100,7 @@ class ProductImport implements ToCollection, WithHeadingRow
                 }
             }
 
-            // 9. Jika ada minimal satu error di $rowErrors, catat semuanya lalu skip insert
+            // 8. Jika ada minimal satu error di $rowErrors, catat semuanya lalu skip insert
             if (! empty($rowErrors)) {
                 foreach ($rowErrors as $errorMsg) {
                     $this->errors[] = $errorMsg;
@@ -128,25 +108,25 @@ class ProductImport implements ToCollection, WithHeadingRow
                 continue;
             }
 
-            // 10. Jika tidak ada error, siapkan data untuk di‐insert
+            // 9. Jika tidak ada error, siapkan data untuk di‐insert
             $this->dataToInsert[] = [
                 'name'        => $rawName,
                 'price'       => $price,
-                'stock'       => $stock,
                 'category_id' => $category->id,
                 'unit_id'     => $unit->id,
-                // 'image'       => null,
+                // Kolom 'stock' tidak di‐insert karena di‐abaikan
             ];
         }
 
-        // 11. Setelah memproses semua baris, jika ada error → throw Exception
+        // 10. Setelah memproses semua baris, jika ada error → throw Exception
         if (! empty($this->errors)) {
             throw new \Exception('Import dibatalkan.');
         }
 
-        // 12. Jika tidak ada error, insert setiap produk yang valid
+        // 11. Jika tidak ada error, insert setiap produk yang valid
         foreach ($this->dataToInsert as $data) {
             Product::create($data);
         }
     }
 }
+

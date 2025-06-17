@@ -115,14 +115,14 @@ class UserController extends Controller
 
                 'initial.required' => 'Inisial wajib diisi.',
                 'initial.alpha' => 'Inisial hanya boleh huruf.',
-                'initial.size' => 'Inisial harus tepat :size karakter.',
+                'initial.size' => 'Inisial harus tepat 3 huruf.',
                 'initial.unique' => 'Inisial sudah digunakan.',
 
                 'role.required' => 'Role wajib dipilih.',
                 'role.in' => 'Role yang dipilih tidak sesuai dengan posisi.',
 
                 'phone_number.required_if' => 'No. handphone wajib diisi untuk posisi Rumah Tangga.',
-                'phone_number.string' => 'No. handphone harus berupa teks.',
+                'phone_number.string' => 'No. handphone harus berupa angka.',
                 'phone_number.min' => 'No. handphone minimal :min karakter.',
                 'phone_number.max' => 'No. handphone maksimal :max karakter.',
                 'phone_number.unique' => 'No. handphone sudah terdaftar.',
@@ -359,19 +359,19 @@ class UserController extends Controller
                     if ($request->hasAny(['position', 'role', 'study_program_id'])) {
                         if ($pos === 'Dosen') {
                             if ($role !== 'Staff') {
-                                $validator->errors()->add('role', 'For Dosen position, role must be Staff.');
+                                $validator->errors()->add('role', 'untuk posisi Dosen, role harus Staff.');
                             }
                             if (!$request->filled('study_program_id')) {
-                                $validator->errors()->add('study_program_id', 'Study program is required for Dosen.');
+                                $validator->errors()->add('study_program_id', 'Program studi wajib diisi untuk posisi Dosen.');
                             }
                         } elseif ($pos === 'Tendik') {
                             $allowed = ['BAAK', 'Staff'];
                             if (!in_array($role, $allowed)) {
-                                $validator->errors()->add('role', 'For Tendik position, role must be BAAK or Staff.');
+                                $validator->errors()->add('role', 'untuk posisi Tendik, role harus salah satu dari: ' . implode(', ', $allowed) . '.');
                             }
                         } elseif ($pos === 'Rumah Tangga') {
                             if ($role !== 'Staff') {
-                                $validator->errors()->add('role', 'For Rumah Tangga position, role must be Staff.');
+                                $validator->errors()->add('role', 'untuk posisi Rumah Tangga, role harus Staff.');
                             }
                         }
                     }

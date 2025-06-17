@@ -75,7 +75,7 @@ class ProductController extends Controller
                         }),
                     ],
                     'price' => 'required|integer|min:0',
-                    'stock' => 'required|integer|min:0',
+                    // 'stock' => 'required|integer|min:0',
                     'image' => 'required|image|mimes:png,jpg,jpeg|max:2048',
                     'category_id' => 'required|exists:categories,id',
                     'unit_id' => 'required|exists:units,id',
@@ -94,7 +94,9 @@ class ProductController extends Controller
                     'image.image' => 'File yang diupload harus berupa gambar',
                     'image.mimes' => 'Gambar harus berupa png, jpg, atau jpeg',
                     'image.max' => 'Ukuran gambar tidak boleh lebih dari 2MB',
+                    'category_id.exists' => 'Kategori product tidak ditemukan',
                     'category_id.required' => 'Kategori product wajib diisi',
+                    'unit_id.exists' => 'Satuan product tidak ditemukan',
                     'unit_id.required' => 'Satuan product wajib diisi',
                 ]
             );
@@ -108,9 +110,11 @@ class ProductController extends Controller
             }
 
             $data = $validator->validated();
+            $data['stock'] = 0;
 
             DB::transaction(function () use ($request, &$product, &$data) {
-                $data['image'] = $request->file('image')->store('images', 'public');
+                $data['image'] =  $request->file('image')->store('images', 'public');
+                // $data['image'] = 'storage/' . $request->file('image')->store('images', 'public');
                 $product = Product::create($data);
             });
 
@@ -177,7 +181,7 @@ class ProductController extends Controller
                 [
                     'name' => ['sometimes', 'string', Rule::unique('products', 'name')->ignore($product->id)->where(fn($q) => $q->whereRaw('LOWER(name)=?', [strtolower($request->name)]))],
                     'price' => 'sometimes|integer|min:0',
-                    'stock' => 'sometimes|integer|min:0',
+                    // 'stock' => 'sometimes|integer|min:0',
                     'image' => 'sometimes|image|mimes:png,jpg,jpeg|max:2048',
                     'category_id' => 'sometimes|exists:categories,id',
                     'unit_id' => 'sometimes|exists:units,id',

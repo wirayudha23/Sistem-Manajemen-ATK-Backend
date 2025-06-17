@@ -59,9 +59,9 @@ class UnitController extends Controller
                     ],
                 ],
                 [
-                    'name.required' => 'Name unit wajib diisi',
-                    'name.unique' => 'Nama unit sudah ada',
-                    'name.string' => 'Nama unit harus berupa tesk'
+                    'name.required' => 'Nama satuan wajib diisi',
+                    'name.unique' => 'Nama satuan sudah ada',
+                    'name.string' => 'Nama satuan harus berupa tesk'
                 ]
             );
 
@@ -79,7 +79,7 @@ class UnitController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Unit berhasil ditambahkan',
+                'message' => 'Satuan berhasil ditambahkan',
                 'data' => $unit,
             ], 201);
         } catch (\Exception $e) {
@@ -141,9 +141,9 @@ class UnitController extends Controller
                 ],
             ],
             [
-                'name.required' => 'Name unit wajib diisi',
-                'name.unique' => 'Nama unit sudah ada',
-                'name.string' => 'Nama unit harus berupa tesk'
+                'name.required' => 'Nama satuan wajib diisi',
+                'name.unique' => 'Nama satuan sudah ada',
+                'name.string' => 'Nama satuan harus berupa tesk'
             ]);
 
             if ($validator->fails()) {
@@ -160,7 +160,7 @@ class UnitController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Unit berhasil diupdate',
+                'message' => 'Nama satuan berhasil diupdate',
                 'data' => $unit,
             ], 200);
         } catch (\Exception $e) {
@@ -178,7 +178,7 @@ class UnitController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Unit berhasil dihapus',
+                'message' => 'Satuan berhasil dihapus',
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

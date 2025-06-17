@@ -10,7 +10,7 @@
   <div class="d-flex align-items-center">
     <!-- Gambar di sebelah kiri -->
     <img
-    src="{{ asset('storage/images/login-art.jpg')}}"
+    src="{{ asset('assets/images/default_product.jpg')}}"
     alt="Login art"
     class="me-4 rounded"
     width="400"

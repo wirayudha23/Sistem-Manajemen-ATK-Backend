@@ -1,5 +1,7 @@
 <?php
 
+use App\Mail\CheckoutMail;
+use App\Models\Checkout;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SocialiteController;
 use App\Http\Controllers\CategoryController;
@@ -24,6 +26,12 @@ Route::get('/debug-appname', function () {
       'URL'   => env('FONNTE_BASE_URL')
     ]);
 });
+
+// Route::get('sendMail', function () {
+//     Mail::to('alexasep2304@gmail.com')
+//         ->send(new CheckoutMail());
+//     return 'Email sent successfully!';
+// });
 
 
 

@@ -41,13 +41,21 @@ class FundTransactionController extends Controller
     {
         try {
             $validated = $request->validate([
-                'date'   => 'required|date_format:d-m-Y H:i:s',
-                'amount' => 'required|integer|min:0',
+                'date'   => 'required|date_format:d-m-Y',
+                'amount' => 'required|integer|min:1',
+            ],
+            [
+                'date.required'   => 'Tanggal tidak boleh kosong.',
+                'date.date_format' => 'Format tanggal harus dd-mm-yyyy.',
+                'amount.required' => 'Jumlah dana tidak boleh kosong.',
+                'amount.integer'  => 'Jumlah dana harus berupa angka.',
+                'amount.min'      => 'Jumlah dana minimal 1.',
             ]);
 
             $tx = FundTransaction::create([
                 'id'                    => (string) Str::uuid(),
-                'date'                  => \Carbon\Carbon::createFromFormat('d-m-Y H:i:s', $validated['date']),
+                // 'date'                  => \Carbon\Carbon::createFromFormat('d-m-Y', $validated['date']),
+                'date'                  => now(),
                 'type'                  => 'in',
                 'amount'                => $validated['amount'],
                 'product_received_id'   => null,

@@ -16,6 +16,7 @@ class ProductReceived extends Model
         'reorder_id',
         'received_date',
         'total_received_price',
+        'received_status',
     ];
 
     public $incrementing = false;

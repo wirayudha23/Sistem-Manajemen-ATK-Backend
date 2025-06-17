@@ -72,7 +72,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'Kertas A4',
             'price' => 230000,
             'stock' => 100,
-            'image' => 'product1.jpg',
+            'economic_order_quantity' => 10,
+            // 'image' => 'assets/images/default_product.jpg',
             'category_id' => $kertas->id,
             'unit_id' => $rim->id,
         ]);
@@ -81,7 +82,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'Buku 3/4 Folio',
             'price' => 13000,
             'stock' => 100,
-            'image' => 'product2.jpg',
+            'economic_order_quantity' => 10,
+            // 'image' => 'assets/images/default_product.jpg',
             'category_id' => $buku->id,
             'unit_id' => $pcs->id,
         ]);
@@ -90,7 +92,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Map Bantex',
             'price' => '933000',
             'stock' => 100,
-            'image' => 'product3.jpg',
+            // 'image' => 'assets/images/default_product.jpg',
             'category_id' => $map->id,
             'unit_id' => $pcs->id,
         ]);
@@ -99,7 +101,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Pena Snowman Hitam',
             'price' => '3000',
             'stock' => 100,
-            'image' => 'product3.jpg',
+            // 'image' => 'assets/images/default_product.jpg',
             'category_id' => $alatTulis->id,
             'unit_id' => $pcs->id,
         ]);
@@ -108,7 +110,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Pena Snowman Merah',
             'price' => '3000',
             'stock' => 100,
-            'image' => 'product3.jpg',
+            // 'image' => 'assets/images/default_product.jpg',
             'category_id' => $alatTulis->id,
             'unit_id' => $pcs->id,
         ]);
@@ -117,7 +119,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Pena Snowman Biru',
             'price' => '3000',
             'stock' => 100,
-            'image' => 'product3.jpg',
+            // 'image' => 'assets/images/default_product.jpg',
             'category_id' => $alatTulis->id,
             'unit_id' => $pcs->id,
         ]);
@@ -126,7 +128,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Spidol Merah',
             'price' => '8500',
             'stock' => 100,
-            'image' => 'product3.jpg',
+            // 'image' => 'assets/images/default_product.jpg',
             'category_id' => $alatTulis->id,
             'unit_id' => $pcs->id,
         ]);
@@ -135,7 +137,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Spidol Hitam',
             'price' => '8500',
             'stock' => 100,
-            'image' => 'product3.jpg',
+            // 'image' => 'assets/images/default_product.jpg',
             'category_id' => $alatTulis->id,
             'unit_id' => $pcs->id,
         ]);
@@ -144,7 +146,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Spidol Biru',
             'price' => '8500',
             'stock' => 100,
-            'image' => 'product3.jpg',
+            // 'image' => 'assets/images/default_product.jpg',
             'category_id' => $alatTulis->id,
             'unit_id' => $pcs->id,
         ]);
@@ -153,7 +155,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Buku Folio F4',
             'price' => '80000',
             'stock' => 100,
-            'image' => 'product3.jpg',
+            // 'image' => 'assets/images/default_product.jpg',
             'category_id' => $buku->id,
             'unit_id' => $pcs->id,
         ]);
@@ -162,7 +164,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Plastik PO',
             'price' => '30000',
             'stock' => 100,
-            'image' => 'product3.jpg',
+            // 'image' => 'assets/images/default_product.jpg',
             'category_id' => $plastik->id,
             'unit_id' => $pcs->id,
         ]);
@@ -171,7 +173,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Sticky Note',
             'price' => '15000',
             'stock' => 100,
-            'image' => 'product3.jpg',
+            // 'image' => 'assets/images/default_product.jpg',
             'category_id' => $stickyNote->id,
             'unit_id' => $pcs->id,
         ]);
@@ -180,16 +182,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Isolasi Kertas',
             'price' => '15000',
             'stock' => 100,
-            'image' => 'product3.jpg',
-            'category_id' => $isolasi->id,
-            'unit_id' => $pcs->id,
-        ]);
-
-        $product14 = Product::create([
-            'name' => 'Isolasi Kertas',
-            'price' => '15000',
-            'stock' => 100,
-            'image' => 'product3.jpg',
+            // 'image' => 'assets/images/default_product.jpg',
             'category_id' => $isolasi->id,
             'unit_id' => $pcs->id,
         ]);
@@ -198,7 +191,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Gantungan Kunci',
             'price' => '37000',
             'stock' => 100,
-            'image' => 'product3.jpg',
+            // 'image' => 'assets/images/default_product.jpg',
             'category_id' => $dll->id,
             'unit_id' => $pcs->id,
         ]);
@@ -207,7 +200,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Kertas A3 100gr',
             'price' => '161000',
             'stock' => 100,
-            'image' => 'product3.jpg',
+            // 'image' => 'assets/images/default_product.jpg',
             'category_id' => $kertas->id,
             'unit_id' => $rim->id,
         ]);
@@ -216,7 +209,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Kertas A4 100gr',
             'price' => '90000',
             'stock' => 100,
-            'image' => 'product3.jpg',
+            // 'image' => 'assets/images/default_product.jpg',
             'category_id' => $kertas->id,
             'unit_id' => $rim->id,
         ]);
@@ -283,6 +276,17 @@ class DatabaseSeeder extends Seeder
             'phone_number' => null,
         ]);
 
+        $user6 = User::create([
+            'name' => 'Rumah Tangga Ahmad',
+            'email' => 'asepalex2304@gmail.com',
+            'nip' => '135790',
+            'position' => 'Rumah Tangga',
+            'study_program_id' => $studyProgram2->id,
+            'initial' => 'RTA',
+            'role' => 'Staff',
+            'phone_number' => '081238827608',
+        ]);
+
 
         CheckoutCart::create([
             'product_id' => $product1->id,
@@ -300,11 +304,13 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         ReorderCart::create([
-            'product_id' => $product1->id
+            'product_id' => $product1->id,
+            'reorder_quantity' => 10,
         ]);
 
         ReorderCart::create([
-            'product_id' => $product2->id
+            'product_id' => $product2->id,
+            'reorder_quantity' => 10,
         ]);
 
         Purpose::create(['name' => 'Prodi/Bagian']);

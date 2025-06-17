@@ -20,7 +20,7 @@ class FundTransaction extends Model
     ];
 
     protected $casts = [
-        'date' => 'datetime',
+        'date' => 'date',
     ];
 
     public function productReceived()

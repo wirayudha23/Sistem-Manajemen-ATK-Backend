@@ -12,13 +12,13 @@ return new class extends Migration {
     {
         Schema::create('products', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('name');
+            $table->string('name')->unique();
             $table->integer('price');
-            $table->integer('stock');
+            $table->integer('stock')->default(0);
             $table->decimal('economic_order_quantity', 10, 2)->nullable()->default(0);
             $table->decimal('safety_stock', 10, 2)->nullable()->default(0);
             $table->decimal('reorder_point', 10, 2)->nullable()->default(0);
-            $table->string('image')->default('image/login-art.jpg');
+            $table->string('image')->default('assets/images/default_product.jpg');
 
             $table->uuid('category_id');
             $table->uuid('unit_id');
