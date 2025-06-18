@@ -384,4 +384,27 @@ class ProductReceivedController extends Controller
             ], 500);
         }
     }
+
+    public function complete(string $id)
+    {
+        $productReceived = ProductReceived::with('details.product')
+            ->findOrFail($id);
+
+        if ($productReceived->received_status !== 'pending') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Hanya penerimaan dengan status pending yang bisa diselesaikan.'
+            ], 422);
+        }
+
+        $productReceived->update([
+            'received_status' => 'selesai',
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Penerimaan produk berhasil diselesaikan.',
+            'data' => $productReceived->load('details.product'),
+        ], 200);
+    }
 }

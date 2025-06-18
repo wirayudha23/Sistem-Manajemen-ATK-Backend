@@ -123,4 +123,9 @@ class Reorder extends Model
             $model->reorder_code = sprintf('PU %s %03d', $datePrefix, $model->month_sequence);
         });
     }
+
+    public function receivings()
+    {
+        return $this->hasMany(ProductReceived::class, 'reorder_id');
+    }
 }

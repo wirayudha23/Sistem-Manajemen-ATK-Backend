@@ -181,12 +181,20 @@ class ReorderController extends Controller
             ], 404);
         }
 
+        if ($reorder->receivings()->exists()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data pengadaan ulang tidak bisa diupdate karena sudah diterima.'
+            ], 400);
+        }
+
         if ($reorder->whatsapp_status === 'dibatalkan') {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Reorder sudah dibatalkan dan tidak bisa diupdate.'
             ], 400);
         }
+
         if (in_array($reorder->reorder_status, ['selesai', 'dibatalkan'])) {
             return response()->json([
                 'status' => 'error',
@@ -227,30 +235,30 @@ class ReorderController extends Controller
             ], 422);
         }
 
-        // 4. Handle cancel via empty details for draft or after update sent
+        // 4a. Handle cancel via empty details for draft
+        \Log::info('📝 Isi details saat update reorder:', $request->details);
+        \Log::info('✅ Jumlah details: ' . (is_array($request->details) ? count($request->details) : 'bukan array'));
+
         if (
             $request->has('details')
-            && count($request->details) === 0
+            && is_array($request->details)
+            && collect($request->details)->filter(fn($d) => !empty($d))->isEmpty()
             && $reorder->reorder_status === 'draft'
             && $reorder->whatsapp_status === 'belum_dikirim'
         ) {
             // Compute diff: all items to zero
-            $diffItems = $reorder->items->mapWithKeys(function ($item) {
-                return [
-                    $item->product_id => [
-                        'from' => $item->reorder_quantity,
-                        'to' => 0,
-                        'name' => $item->product->name,
-                    ],
-                ];
-            })->toArray();
+            $diffItems = $reorder->items->mapWithKeys(fn($item) => [
+                $item->product_id => [
+                    'from' => $item->reorder_quantity,
+                    'to' => 0,
+                    'name' => $item->product->name,
+                ],
+            ])->toArray();
 
-            // Reset quantities to 0
             foreach ($reorder->items as $item) {
                 $item->update(['reorder_quantity' => 0]);
             }
 
-            // Update statuses & diff
             $reorder->update([
                 'reorder_status' => 'dibatalkan',
                 'whatsapp_status' => 'dibatalkan',
@@ -260,6 +268,40 @@ class ReorderController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Pengadaan dibatalkan',
+                'data' => $reorder,
+            ], 200);
+        }
+
+        // 4b. Handle cancel via empty details for non-draft (after sent)
+        if (
+            $request->has('details')
+            && is_array($request->details)
+            && collect($request->details)->filter(fn($d) => !empty($d))->isEmpty()
+            && $reorder->reorder_status !== 'draft'
+            && $reorder->whatsapp_status !== 'dibatalkan'
+        ) {
+            // Compute diff: all items to zero
+            $diffItems = $reorder->items->mapWithKeys(fn($item) => [
+                $item->product_id => [
+                    'from' => $item->reorder_quantity,
+                    'to' => 0,
+                    'name' => $item->product->name,
+                ],
+            ])->toArray();
+
+            foreach ($reorder->items as $item) {
+                $item->update(['reorder_quantity' => 0]);
+            }
+
+            $reorder->update([
+                'reorder_status' => 'dibatalkan',
+                'whatsapp_status' => 'update_belum_dikirim',
+                'pending_update_diff' => ['items' => $diffItems],
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Reorder dibatalkan setelah update dikirim sebelumnya.',
                 'data' => $reorder,
             ], 200);
         }
@@ -310,11 +352,11 @@ class ReorderController extends Controller
             if ($old['delivery_date'] !== $new['delivery_date']) {
                 $diff['delivery_date'] = ['from' => $old['delivery_date'], 'to' => $new['delivery_date']];
             }
-            // Price diff (if needed)
+            // Price diff
             if ($old['total_reorder_price'] !== $new['total_reorder_price']) {
                 $diff['total_reorder_price'] = ['from' => $old['total_reorder_price'], 'to' => $new['total_reorder_price']];
             }
-            // Items diff for all old keys (removed => to=0)
+            // Items diff
             foreach ($old['items'] as $pid => $o) {
                 $nQty = $new['items'][$pid]['qty'] ?? 0;
                 if ($o['qty'] !== $nQty) {
@@ -331,10 +373,9 @@ class ReorderController extends Controller
 
             // 7. Simpan diff jika ada perubahan dan bukan status dibatalkan
             if (
-                !empty($diff) &&
-                $origWa !== 'dibatalkan' &&
-                // skip jika masih draft & belum dikirim
-                !($origWa === 'belum_dikirim' && $origStatus === 'draft')
+                !empty($diff)
+                && $origWa !== 'dibatalkan'
+                && !($origWa === 'belum_dikirim' && $origStatus === 'draft')
             ) {
                 $updated->update([
                     'pending_update_diff' => $diff,
@@ -356,6 +397,7 @@ class ReorderController extends Controller
         }
     }
 
+
     public function destroy($id)
     {
         $reorder = Reorder::find($id);
@@ -365,6 +407,13 @@ class ReorderController extends Controller
                 'status' => 'error',
                 'message' => 'Reorder tidak ditemukan.',
             ], 404);
+        }
+
+        if ($reorder->receivings()->exists()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data pengadaan ulang tidak bisa diupdate karena sudah diterima.'
+            ], 400);
         }
 
         $ws = $reorder->whatsapp_status;

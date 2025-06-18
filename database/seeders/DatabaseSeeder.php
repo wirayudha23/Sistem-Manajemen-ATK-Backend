@@ -287,6 +287,17 @@ class DatabaseSeeder extends Seeder
             'phone_number' => '081238827608',
         ]);
 
+        $user7 = User::create([
+            'name' => 'Mingyu Sarah',
+            'email' => 'sarahmingyu@gmail.com',
+            'nip' => 555994,
+            'position' => 'Rumah Tangga',
+            'study_program_id' => $studyProgram1->id,
+            'initial' => 'SNP',
+            'role' => 'Staff',
+            'phone_number' => '089621317671',
+        ]);
+
 
         CheckoutCart::create([
             'product_id' => $product1->id,

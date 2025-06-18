@@ -70,10 +70,12 @@ class ReorderWhatsappController extends Controller
             ], 400);
         }
 
-        if ($reorder->reorder_status === [
-            'proses',
-            'selesai',
-            'dibatalkan']
+        if (
+            $reorder->reorder_status === [
+                'proses',
+                'selesai',
+                'dibatalkan'
+            ]
         ) {
             return response()->json([
                 'status' => 'error',
@@ -252,18 +254,14 @@ class ReorderWhatsappController extends Controller
             ], 400);
         }
 
-        $allZero = true;
-        foreach ($diff['items'] as $item) {
-            if (($item['to'] ?? 0) > 0) {
-                $allZero = false;
-                break;
-            }
-        }
-
         try {
             $to = $this->wa->formatPhone($reorder->user->phone_number);
 
-            if ($allZero) {
+            // Hitung sisa qty setelah update
+            $remaining = $reorder->items()->sum('reorder_quantity');
+
+            if ($remaining === 0) {
+                // semua qty benar-benar jadi 0 → cancel
                 $message = $this->wa->buildCancelMessage($reorder);
                 $reorder->update([
                     'whatsapp_status' => 'update_sudah_dikirim',
@@ -271,23 +269,25 @@ class ReorderWhatsappController extends Controller
                     'pending_update_diff' => null,
                     'wa_error_message' => null,
                 ]);
+                $responseMsg = 'Pembatalan WA berhasil dikirim.';
             } else {
+                // masih ada qty positif di stock → update
                 $message = $this->wa->buildUpdateMessage($reorder, $diff);
                 $reorder->update([
                     'whatsapp_status' => 'update_sudah_dikirim',
                     'pending_update_diff' => null,
                     'wa_error_message' => null,
                 ]);
+                $responseMsg = 'Pembaruan WA berhasil dikirim.';
             }
 
+            // Kirim pesan ke WA
             $this->wa->sendMessage($to, $message);
 
             Log::info("[WA UPDATE] Update WA berhasil untuk Reorder ID: $reorderId");
             return response()->json([
                 'status' => 'success',
-                'message' => $allZero
-                    ? 'Pembatalan WA berhasil dikirim.'
-                    : 'Pembaruan WA berhasil dikirim.',
+                'message' => $responseMsg,
                 'data' => $reorder,
             ], 200);
 
