@@ -18,6 +18,12 @@ class CheckoutExcelController extends Controller
         $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
+        ], [
+            'start_date.required' => 'Tanggal awal wajib diisi.',
+            'start_date.date' => 'Tanggal awal harus berupa tanggal yang valid.',
+            'end_date.required' => 'Tanggal akhir wajib diisi.',
+            'end_date.date' => 'Tanggal akhir harus berupa tanggal yang valid.',
+            'end_date.after_or_equal' => 'Tanggal akhir harus sama dengan atau setelah tanggal awal.',
         ]);
 
         $start = $request->query('start_date');
@@ -39,11 +45,11 @@ class CheckoutExcelController extends Controller
     {
         // 1) Validasi file upload
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls,csv',
+            'file' => 'required|file|mimes:xlsx',
         ], [
             'file.required' => 'File import wajib diunggah.',
             'file.file' => 'Unggahan harus berupa file.',
-            'file.mimes' => 'Format file hanya boleh xlsx, xls, atau csv.',
+            'file.mimes' => 'Format file hanya boleh xlsx',
         ]);
 
         try {
@@ -53,7 +59,7 @@ class CheckoutExcelController extends Controller
             // 3) Jika semua baris berhasil disimpan
             return response()->json([
                 'status' => 'success',
-                'message' => 'Import checkout berhasil.',
+                'message' => 'Import data pengambilan ATK berhasil.',
             ], 201);
 
         } catch (\Exception $e) {
@@ -70,12 +76,12 @@ class CheckoutExcelController extends Controller
             }
 
             // Log error (opsional)
-            Log::error('Error saat import checkout: ', $errorsArray);
+            Log::error('Error saat import data pengambilan: ', $errorsArray);
 
             // 5) Return response sesuai format yang diminta
             return response()->json([
                 'status' => 'error',
-                'message' => 'Import checkout gagal. Silakan perbaiki kesalahan berikut, lalu coba lagi. Import dibatalkan.',
+                'message' => 'Import data pengambilan gagal. Silakan perbaiki kesalahan berikut, lalu coba lagi. Import dibatalkan.',
                 'errors' => $errorsArray,
             ], 422);
         }

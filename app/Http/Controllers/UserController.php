@@ -176,7 +176,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'User berhasil ditambahkan',
+                'message' => 'Pengguna berhasil ditambahkan',
                 'data' => $user,
             ], 201);
 
@@ -242,7 +242,7 @@ class UserController extends Controller
                 if ($currentUser->id === $user->id) {
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Kabag cannot change their own role',
+                        'message' => 'Kabag tidak dapat mempromosikan dirinya sendiri',
                     ], 403);
                 }
 
@@ -250,7 +250,7 @@ class UserController extends Controller
                 if ($user->role !== 'BAAK') {
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Only users with role BAAK can be promoted to Kabag',
+                        'message' => 'Hanya pengguna dengan role BAAK yang dapat dipromosikan menjadi Kabag',
                     ], 400);
                 }
 
@@ -259,7 +259,7 @@ class UserController extends Controller
                 if ($newRole !== 'Kabag') {
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Role must be Kabag',
+                        'message' => 'Role harus diubah menjadi Kabag untuk promosi',
                     ], 400);
                 }
 
@@ -271,7 +271,7 @@ class UserController extends Controller
 
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'User promoted to Kabag and current Kabag demoted to Staff',
+                    'message' => 'Pengguna berhasil dipromosikan menjadi Kabag',
                     'data' => $user,
                 ], 200);
 
@@ -331,7 +331,7 @@ class UserController extends Controller
                 'nip.unique'                   => 'NIP sudah terdaftar.',
 
                 'initial.alpha'                => 'Inisial hanya boleh huruf.',
-                'initial.size'                 => 'Inisial harus tepat :size karakter.',
+                'initial.size'                 => 'Inisial harus tepat :size huruf.',
                 'initial.unique'               => 'Inisial sudah digunakan.',
 
                 'position.in'                  => 'Posisi yang dipilih tidak valid.',
@@ -405,7 +405,7 @@ class UserController extends Controller
 
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'User berhasil diupdate',
+                    'message' => 'Data pengguna berhasil diperbarui',
                     'data' => $user,
                 ], 200);
 
@@ -433,7 +433,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'User berhasil dihapus',
+                'message' => 'Data pengguna berhasil dihapus',
             ], 200);
         } catch (\Exception $e) {
             Log::error($e->getMessage());

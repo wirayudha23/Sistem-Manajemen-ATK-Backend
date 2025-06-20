@@ -72,7 +72,7 @@ class CheckoutController extends Controller
             ],
             [
                 'user_id.required' => 'Inisial wajib diisi',
-                'user_id.exists' => 'User harus role Staff',
+                'user_id.exists' => 'Inisial tidak ditemukan atau bukan Staff',
                 'purpose_id.required' => 'Kebutuhan wajib diisi',
                 'purpose_id.exists' => 'Kebutuhan tidak ditemukan',
                 'description.max' => 'Deskripsi tidak boleh lebih dari 2000 karakter',
@@ -231,9 +231,9 @@ class CheckoutController extends Controller
                 'details.array' => 'Format daftar detail tidak valid',
                 'details.*.product_id.required_with' => 'Produk wajib dipilih',
                 'details.*.product_id.exists' => 'Produk tidak ditemukan',
-                'details.*.checkout_quantity.required_with' => 'Jumlah wajib diisi',
-                'details.*.checkout_quantity.integer' => 'Jumlah harus berupa angka',
-                'details.*.checkout_quantity.min' => 'Jumlah minimal 1',
+                'details.*.checkout_quantity.required_with' => 'Jumlah pengambilan wajib diisi',
+                'details.*.checkout_quantity.integer' => 'Jumlah pengambilan harus berupa angka',
+                'details.*.checkout_quantity.min' => 'Jumlah pengambilan minimal 1',
             ]
         );
 
@@ -301,7 +301,7 @@ class CheckoutController extends Controller
                     $maxQty = $prod->stock + $oldQty;
 
                     if ($diff > 0 && $prod->stock < $diff) {
-                        $stockErrors[] = "Produk {$prod->name}: Maksimal bisa diambil {$maxQty}, tetapi permintaan {$newQty}.";
+                        $stockErrors[] = "Produk {$prod->name}: Maksimal bisa diambil {$maxQty}, tetapi jumlah pengambilan {$newQty}.";
                     }
                 }
 
@@ -352,7 +352,7 @@ class CheckoutController extends Controller
                     DB::commit();
                     return response()->json([
                         'status' => 'success',
-                        'message' => 'Checkout dihapus karena tidak ada item',
+                        'message' => 'Data pengambilan dihapus karena tidak ada produk yang diambil',
                     ], 200);
                 }
             }
@@ -369,7 +369,7 @@ class CheckoutController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Checkout berhasil diperbarui',
+                'message' => 'Data pengambilan ATK berhasil diperbarui',
                 'data' => [
                     'checkout_id' => $checkout->id,
                     'checkout_date' => $checkout->checkout_date,
@@ -418,7 +418,7 @@ class CheckoutController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Pengambilan ATK berhasil dihapus',
+                'message' => 'Data pengambilan ATK berhasil dihapus',
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();

@@ -49,6 +49,10 @@ class StudyProgramController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|unique:study_programs,name',
+            ], [
+                'name.required' => 'Nama program studi wajib diisi.',
+                'name.string' => 'Nama program studi harus berupa tesk',
+                'name.unique' => 'Nama program studi sudah ada.',
             ]);
 
             $validator->after(function ($validator) use ($request) {
@@ -71,7 +75,7 @@ class StudyProgramController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Study program created successfully',
+                'message' => 'Program studi berhasil ditambahkan',
                 'data' => $studyProgram,
             ], 201);
         } catch (\Exception $e) {
@@ -105,6 +109,10 @@ class StudyProgramController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|unique:study_programs,name,' . $id,
+            ], [
+                'name.required' => 'Nama program studi wajib diisi.',
+                'name.string' => 'Nama program studi harus berupa teks',
+                'name.unique' => 'Nama program studi sudah ada.',
             ]);
 
             if ($validator->fails()) {
@@ -122,7 +130,7 @@ class StudyProgramController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Study program updated successfully',
+                'message' => 'Data program studi berhasil diperbarui',
                 'data' => $studyProgram,
             ], 200);
         } catch (\Exception $e) {
@@ -141,7 +149,7 @@ class StudyProgramController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Study program deleted successfully',
+                'message' => 'Data program studi berhasil dihapus',
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

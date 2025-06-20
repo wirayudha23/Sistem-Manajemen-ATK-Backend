@@ -50,7 +50,7 @@ class ReorderCartController extends Controller
                 'product_id' => 'required|exists:products,id',
             ],
             [
-                'product_id.required' => 'Pilih produk yang akan dipesan ulang.',
+                'product_id.required' => 'Tambahkan produk yang ingin dipesan ulang.',
                 'product_id.exists' => 'Produk yang dipilih tidak ditemukan.',
             ]);
 
@@ -68,7 +68,7 @@ class ReorderCartController extends Controller
             if ($exist) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => "Product {$product->name} sudah ada di keranjang"
+                    'message' => "Produk {$product->name} sudah ada di daftar pemesanan"
                 ], 409);
             }
 
@@ -84,7 +84,7 @@ class ReorderCartController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => "Product {$product->name} berhasil ditambahkan ke keranjang",
+                'message' => "Produk {$product->name} berhasil ditambahkan ke daftar pemesanan",
                 'data' => $reorderCart,
             ], 201);
         } catch (\Exception $e) {
@@ -180,7 +180,7 @@ class ReorderCartController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => "{$reorderCart->product->name} berhasil dihapus dari keranjang",
+                'message' => "{$reorderCart->product->name} berhasil dihapus dari daftar pemesanan",
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

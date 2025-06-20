@@ -57,6 +57,10 @@ class PurposeController extends Controller
                         $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
                     }),
                 ],
+            ], [
+                'name.required' => 'Nama kebutuhan wajib diisi',
+                'name.string' => 'Nama kebutuhan harus berupa teks',
+                'name.unique' => 'Nama kebutuhan sudah ada',
             ]);
 
             if ($validator->fails()) {
@@ -73,7 +77,7 @@ class PurposeController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Purpose created successfully',
+                'message' => 'Kebutuhan berhasil ditambahkan',
                 'data' => $purpose,
             ], 201);
         } catch (\Exception $e) {
@@ -120,6 +124,10 @@ class PurposeController extends Controller
                 Rule::unique('purposes')->where(function ($query) use ($request) {
                     $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
                 }),
+            ], [
+                'name.sometimes' => 'Nama kebutuhan tidak boleh kosong',
+                'name.string' => 'Nama kebutuhan harus berupa teks',
+                'name.unique' => 'Nama kebutuhan sudah ada',
             ]);
 
             if ($validator->fails()) {
@@ -136,7 +144,7 @@ class PurposeController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Purpose updated successfully',
+                'message' => 'Kebutuhan berhasil diperbarui',
                 'data' => $purpose,
             ], 200);
         } catch (\Exception $e) {
@@ -156,7 +164,7 @@ class PurposeController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Purpose deleted successfully',
+                'message' => 'Kebutuhan berhasil dihapus',
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

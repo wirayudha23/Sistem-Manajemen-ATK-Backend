@@ -81,23 +81,23 @@ class ProductController extends Controller
                     'unit_id' => 'required|exists:units,id',
                 ],
                 [
-                    'name.required' => 'Nama product wajib diisi',
-                    'name.unique' => 'Nama product sudah ada',
-                    'name.string' => 'Nama product harus berupa teks',
-                    'price.required' => 'Harga product wajib diisi',
-                    'price.integer' => 'Harga product harus berupa angka',
-                    'price.min' => 'Harga product tidak boleh kurang dari 0',
-                    'stock.required' => 'Stock product wajib diisi',
-                    'stock.integer' => 'Stock product harus berupa angka',
-                    'stock.min' => 'Stock product tidak boleh kurang dari 0',
-                    'image.required' => 'Gambar product wajib diisi',
+                    'name.required' => 'Nama produk wajib diisi',
+                    'name.unique' => 'Nama produk sudah ada',
+                    'name.string' => 'Nama produk harus berupa teks',
+                    'price.required' => 'Harga produk wajib diisi',
+                    'price.integer' => 'Harga produk harus berupa angka',
+                    'price.min' => 'Harga produk tidak boleh kurang dari 0',
+                    'stock.required' => 'Stok produk wajib diisi',
+                    'stock.integer' => 'Stok produk harus berupa angka',
+                    'stock.min' => 'Stok produk tidak boleh kurang dari 0',
+                    'image.required' => 'Gambar produk wajib diisi',
                     'image.image' => 'File yang diupload harus berupa gambar',
                     'image.mimes' => 'Gambar harus berupa png, jpg, atau jpeg',
                     'image.max' => 'Ukuran gambar tidak boleh lebih dari 2MB',
-                    'category_id.exists' => 'Kategori product tidak ditemukan',
-                    'category_id.required' => 'Kategori product wajib diisi',
-                    'unit_id.exists' => 'Satuan product tidak ditemukan',
-                    'unit_id.required' => 'Satuan product wajib diisi',
+                    'category_id.exists' => 'Kategori produk tidak ditemukan',
+                    'category_id.required' => 'Kategori produk wajib diisi',
+                    'unit_id.exists' => 'Satuan produk tidak ditemukan',
+                    'unit_id.required' => 'Satuan produk wajib diisi',
                 ]
             );
 
@@ -120,7 +120,7 @@ class ProductController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Product berhasil ditambahkan',
+                'message' => 'Data produk berhasil ditambahkan',
                 'data' => $product->load('category:id,name', 'unit:id,name'),
             ], 201);
 
@@ -191,17 +191,19 @@ class ProductController extends Controller
                     'name.unique' => 'Nama produk sudah ada.',
 
                     'price.integer' => 'Harga harus berupa angka.',
-                    'price.min' => 'Harga tidak boleh kurang dari :min.',
+                    'price.min' => 'Harga tidak boleh kurang dari 0',
 
                     'stock.integer' => 'Stok harus berupa angka.',
-                    'stock.min' => 'Stok tidak boleh kurang dari :min.',
+                    'stock.min' => 'Stok tidak boleh kurang dari 0',
 
                     'image.image' => 'File harus berupa gambar.',
                     'image.mimes' => 'Format gambar hanya boleh: png, jpg, jpeg.',
                     'image.max' => 'Ukuran gambar maksimal :max kilobyte.',
 
                     'category_id.exists' => 'Kategori tidak ditemukan.',
+                    'category_id.required' => 'Kategori wajib diisi.',
                     'unit_id.exists' => 'Satuan tidak ditemukan.',
+                    'unit_id.required' => 'Satuan wajib diisi.',
                 ]
             );
 
@@ -231,7 +233,7 @@ class ProductController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Product berhasil diupdate',
+                'message' => 'Data produk berhasil diperbarui',
                 'data' => $product->load('category:id,name', 'unit:id,name'),
             ], 200);
 
@@ -256,7 +258,7 @@ class ProductController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Product berhasil dihapus',
+                'message' => 'Data produk berhasil dihapus',
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

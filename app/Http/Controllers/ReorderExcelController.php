@@ -37,26 +37,26 @@ class ReorderExcelController extends Controller
         }
     }
 
-    public function import(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|mimes:xlsx,xls',
-        ]);
-        try {
-            $import = new CheckoutImport();
-            Excel::import($import, $request->file('file'));
+    // public function import(Request $request)
+    // {
+    //     $request->validate([
+    //         'file' => 'required|mimes:xlsx,xls',
+    //     ]);
+    //     try {
+    //         $import = new CheckoutImport();
+    //         Excel::import($import, $request->file('file'));
 
-            return response()->json([
-                'message' => 'Data imported successfully.',
-                'errors' => $import->errors,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Import error: ' . $e->getMessage());
-            $errorMessage = explode("\n", $e->getMessage());
-            return response()->json([
-                'message' => 'Import Data Pengambilan ATK Gagal',
-                'error' => $errorMessage,
-            ], 500);
-        }
-    }
+    //         return response()->json([
+    //             'message' => 'Data imported successfully.',
+    //             'errors' => $import->errors,
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         Log::error('Import error: ' . $e->getMessage());
+    //         $errorMessage = explode("\n", $e->getMessage());
+    //         return response()->json([
+    //             'message' => 'Import Data Pengambilan ATK Gagal',
+    //             'error' => $errorMessage,
+    //         ], 500);
+    //     }
+    // }
 }

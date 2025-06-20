@@ -66,9 +66,9 @@ class ReorderController extends Controller
         $validator = Validator::make($request->all(), [
             'delivery_date' => 'required|date_format:d-m-Y|after_or_equal:' . $now->format('d-m-Y'),
         ], [
-            'delivery_date.required' => 'Tanggal pengiriman tidak boleh kosong.',
-            'delivery_date.date_format' => 'Format tanggal pengiriman harus dd-mm-yyyy.',
-            'delivery_date.after_or_equal' => 'Tanggal pengiriman harus hari ini atau setelahnya.',
+            'delivery_date.required' => 'Tanggal diharapkan tidak boleh kosong.',
+            'delivery_date.date_format' => 'Format tanggal harus dd-mm-yyyy.',
+            'delivery_date.after_or_equal' => 'Tanggal diharapkan harus hari ini atau setelahnya.',
         ]);
 
         if ($validator->fails()) {
@@ -137,7 +137,7 @@ class ReorderController extends Controller
             // 3. Jika semua di dalam closure berhasil, transaksi otomatis commit
             return response()->json([
                 'status' => 'success',
-                'message' => 'Data Pengadaan ulang berhasil dibuat.',
+                'message' => 'Data Pengadaan ulang berhasil dibuat',
                 'data' => $reorder,
             ], 201);
 
@@ -184,21 +184,21 @@ class ReorderController extends Controller
         if ($reorder->receivings()->exists()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Data pengadaan ulang tidak bisa diupdate karena sudah diterima.'
+                'message' => 'Data pengadaan ulang tidak bisa diperbarui karena sudah diterima'
             ], 400);
         }
 
         if ($reorder->whatsapp_status === 'dibatalkan') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Reorder sudah dibatalkan dan tidak bisa diupdate.'
+                'message' => 'Pengadaan ulang sudah dibatalkan dan tidak bisa diperbarui'
             ], 400);
         }
 
         if (in_array($reorder->reorder_status, ['selesai', 'dibatalkan'])) {
             return response()->json([
                 'status' => 'error',
-                'message' => "Reorder sudah {$reorder->reorder_status} dan tidak bisa diupdate."
+                'message' => "Data pengadaan ulang sudah {$reorder->reorder_status} dan tidak bisa diperbarui."
             ], 400);
         }
 
@@ -220,8 +220,8 @@ class ReorderController extends Controller
             'details.*.product_id' => 'required_with:details|exists:products,id',
             'details.*.reorder_quantity' => 'required_with:details|integer|min:1',
         ], [
-            'delivery_date.required' => 'Tanggal pengiriman harus diisi.',
-            'delivery_date.after_or_equal' => 'Tanggal pengiriman tidak boleh lebih kecil dari tanggal permintaan.',
+            'delivery_date.required' => 'Tanggal diharapkan harus diisi.',
+            'delivery_date.after_or_equal' => 'Tanggal diharapkan tidak boleh lebih kecil dari tanggal permintaan.',
             'details.array' => 'Detail harus berupa array.',
             'details.*.product_id.required_with' => 'ID produk harus diisi.',
             'details.*.reorder_quantity.required_with' => 'Jumlah pengadaan harus diisi.',
@@ -267,7 +267,7 @@ class ReorderController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Pengadaan dibatalkan',
+                'message' => 'Pengadaan ulang dibatalkan',
                 'data' => $reorder,
             ], 200);
         }
@@ -301,7 +301,7 @@ class ReorderController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Reorder dibatalkan setelah update dikirim sebelumnya.',
+                'message' => 'Pengadaan ulang dibatalkan, segera kirim notifikasi WhatsApp',
                 'data' => $reorder,
             ], 200);
         }
@@ -385,7 +385,7 @@ class ReorderController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Reorder berhasil diperbarui.',
+                'message' => 'Data pengadaan ulang berhasil diperbarui.',
                 'data' => $updated,
             ], 200);
 
@@ -412,7 +412,7 @@ class ReorderController extends Controller
         if ($reorder->receivings()->exists()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Data pengadaan ulang tidak bisa diupdate karena sudah diterima.'
+                'message' => 'Data pengadaan ulang tidak bisa diperbarui karena sudah diterima.'
             ], 400);
         }
 
@@ -427,7 +427,14 @@ class ReorderController extends Controller
         if (!$bolehHapus) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Reorder hanya dapat dihapus jika status WhatsApp dan status penerimaan sesuai ketentuan.',
+                'message' => 'Data pengadaan ulang hanya dapat dihapus jika status sesuai dengan salah satu dari kombinasi berikut:
+- WhatsApp: belum dikirim & Penerimaan: draft
+- WhatsApp: dibatalkan & Penerimaan: dibatalkan
+- WhatsApp: update sudah dikirim & Penerimaan: dibatalkan',
+                'current_status' => [
+                    'whatsapp_status' => $ws,
+                    'received_status' => $rs,
+                ],
             ], 400);
         }
 

@@ -81,7 +81,7 @@ class FundTransactionController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'Dana masuk berhasil dicatat.',
+                'message' => 'Dana masuk berhasil ditambahkan.',
                 'data' => $tx,
             ], 201);
         } catch (\Exception $e) {
@@ -103,7 +103,7 @@ class FundTransactionController extends Controller
 
             if ($tx->type !== 'in') {
                 return response()->json([
-                    'message' => 'Hanya transaksi masuk (type "in") yang bisa diubah.'
+                    'message' => 'Hanya transaksi dana masuk yang bisa diubah.'
                 ], 403);
             }
 
@@ -130,7 +130,7 @@ class FundTransactionController extends Controller
             $tx->save();
 
             return response()->json([
-                'message' => 'Transaksi berhasil diupdate.',
+                'message' => 'Data dana masuk berhasil diperbarui',
                 'data' => $tx,
             ], 200);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -143,7 +143,7 @@ class FundTransactionController extends Controller
                 'exception' => $e,
             ]);
             return response()->json([
-                'message' => 'Terjadi kesalahan saat mengupdate transaksi.',
+                'message' => 'Terjadi kesalahan saat memperbarui dana masuk',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -160,14 +160,14 @@ class FundTransactionController extends Controller
 
             if ($tx->type !== 'in') {
                 return response()->json([
-                    'message' => 'Hanya transaksi masuk (type "in") yang bisa dihapus.'
+                    'message' => 'Hanya transaksi dana masuk yang bisa dihapus'
                 ], 403);
             }
 
             $tx->delete();
 
             return response()->json([
-                'message' => 'Transaksi berhasil dihapus.'
+                'message' => 'Data dana masuk berhasil dihapus',
             ], 200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
@@ -178,7 +178,7 @@ class FundTransactionController extends Controller
                 'exception' => $e,
             ]);
             return response()->json([
-                'message' => 'Terjadi kesalahan saat menghapus transaksi.',
+                'message' => 'Terjadi kesalahan saat menghapus data dana masuk',
                 'error' => $e->getMessage(),
             ], 500);
         }

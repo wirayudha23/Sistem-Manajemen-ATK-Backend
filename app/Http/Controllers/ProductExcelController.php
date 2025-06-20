@@ -46,7 +46,7 @@ class ProductExcelController extends Controller
             DB::commit();
             return response()->json([
                 'status'  => 'success',
-                'message' => 'Import produk berhasil.',
+                'message' => 'Import data produk berhasil.',
             ], 201);
 
         } catch (\Exception $e) {
@@ -57,7 +57,7 @@ class ProductExcelController extends Controller
             // 5. Kembalikan JSON yang memuat daftar semua error yang dikumpulkan importer
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Import produk gagal. Silakan perbaiki kesalahan berikut, lalu coba lagi.' . $e->getMessage(),
+                'message' => 'Import data produk gagal. Silakan perbaiki kesalahan berikut, lalu coba lagi.' . $e->getMessage(),
                 'errors'  => $importer->errors,
             ], 422);
         }

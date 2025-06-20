@@ -167,7 +167,7 @@ class CategoryController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Kategori berhasil diupdate',
+                'message' => 'Kategori berhasil diperbarui',
                 'data' => $category,
             ], 200);
 

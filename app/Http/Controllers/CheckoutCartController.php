@@ -88,14 +88,14 @@ class CheckoutCartController extends Controller
             if ($request->checkout_quantity > $product->stock) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => "Stock {$product->name} tidak cukup."
+                    'message' => "Stok {$product->name} tidak cukup."
                 ], 409);
             }
 
             if (CheckoutCart::where('product_id', $request->product_id)->exists()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => "Product {$product->name} sudah ada di daftar ATK",
+                    'message' => "Produk {$product->name} sudah ada di daftar ATK",
                 ], 409);
             }
 
@@ -106,7 +106,7 @@ class CheckoutCartController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => "Product {$product->name} ditambahkan ke daftar ATK",
+                'message' => "Produk {$product->name} ditambahkan ke daftar ATK",
                 'data' => $checkoutCart,
             ], 201);
         } catch (\Exception $e) {
@@ -176,7 +176,7 @@ class CheckoutCartController extends Controller
             if ($product->stock < $request->checkout_quantity) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => "Stock {$product->name} tidak cukup."
+                    'message' => "Stok {$product->name} tidak cukup."
                 ], 409);
             }
 

@@ -160,7 +160,7 @@ class UnitController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Nama satuan berhasil diupdate',
+                'message' => 'Nama satuan berhasil diperbarui',
                 'data' => $unit,
             ], 200);
         } catch (\Exception $e) {
@@ -178,7 +178,7 @@ class UnitController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Satuan berhasil dihapus',
+                'message' => 'Data satuan berhasil dihapus',
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

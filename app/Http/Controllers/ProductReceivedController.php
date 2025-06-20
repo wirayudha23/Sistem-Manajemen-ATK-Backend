@@ -146,7 +146,7 @@ class ProductReceivedController extends Controller
             if ($exists) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Reorder ini sudah pernah diterima sebelumnya.'
+                    'message' => 'Data penerimaan produk untuk pengadaan ini sudah ada'
                 ], 422);
             }
 
@@ -248,7 +248,7 @@ class ProductReceivedController extends Controller
             if ($productReceived->received_status !== 'pending') {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Hanya penerimaan dengan status pending yang bisa diupdate.'
+                    'message' => 'Hanya data penerimaan dengan status pending yang bisa diperbarui'
                 ], 422);
             }
 
@@ -393,7 +393,7 @@ class ProductReceivedController extends Controller
         if ($productReceived->received_status !== 'pending') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Hanya penerimaan dengan status pending yang bisa diselesaikan.'
+                'message' => 'Hanya data penerimaan dengan status pending yang bisa diselesaikan.'
             ], 422);
         }
 
@@ -403,7 +403,7 @@ class ProductReceivedController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Penerimaan produk berhasil diselesaikan.',
+            'message' => 'Data penerimaan produk berhasil diselesaikan',
             'data' => $productReceived->load('details.product'),
         ], 200);
     }

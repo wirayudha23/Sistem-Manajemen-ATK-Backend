@@ -31,7 +31,7 @@ class ReorderWhatsappController extends Controller
         if ($reorder->whatsapp_status === 'gagal_dikirim') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Reorder ini gagal dikirim sebelumnya. Silakan coba lagi.'
+                'message' => 'Data pengadaan ini gagal dikirim sebelumnya. Silakan coba lagi.'
             ], 400);
         }
 
@@ -45,28 +45,28 @@ class ReorderWhatsappController extends Controller
         if ($reorder->whatsapp_status === 'update_belum_dikirim') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Tidak ada update WA yang perlu dikirim.'
+                'message' => 'Tidak ada pembaruan WA yang perlu dikirim.'
             ], 400);
         }
 
         if ($reorder->whatsapp_status === 'update_sudah_dikirim') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Update WA sudah dikirim sebelumnya.'
+                'message' => 'Pembaruan WA sudah dikirim sebelumnya.'
             ], 400);
         }
 
         if ($reorder->whatsapp_status === 'update_gagal_dikirim') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Update WA gagal dikirim sebelumnya.'
+                'message' => 'Pembaruan WA gagal dikirim sebelumnya.'
             ], 400);
         }
 
         if ($reorder->whatsapp_status === 'dibatalkan') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Reorder ini sudah dibatalkan dan tidak dapat dikirim ulang.'
+                'message' => 'Data pengadaan ulang ini sudah dibatalkan dan tidak dapat dikirim ulang.'
             ], 400);
         }
 
@@ -79,7 +79,7 @@ class ReorderWhatsappController extends Controller
         ) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Reorder ini sudah dalam proses atau selesai dan tidak dapat dikirim ulang.'
+                'message' => 'Data pengadaan ulang ini sudah dalam proses atau selesai dan tidak dapat dikirim ulang.'
             ], 400);
         }
 
@@ -88,8 +88,8 @@ class ReorderWhatsappController extends Controller
             $request->validate([
                 'user_id' => ['required', 'exists:users,id'],
             ], [
-                'user_id.required' => 'Tolong pilih User yang akan menerima pesan WA.',
-                'user_id.exists' => 'Tolong pilih User yang valid dari daftar yang ada.',
+                'user_id.required' => 'Tolong pilih Rumah tangga yang akan menerima pesan WA.',
+                'user_id.exists' => 'Tolong pilih Rumah tangga yang valid dari daftar yang ada.',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -106,7 +106,7 @@ class ReorderWhatsappController extends Controller
             Log::info("[WA SEND] User bukan Rumah Tangga: {$user->position}");
             return response()->json([
                 'status' => 'error',
-                'message' => 'User terpilih tidak berposisi Rumah Tangga.'
+                'message' => 'Pengguna terpilih tidak berposisi sebagai Rumah Tangga.'
             ], 400);
         }
 
@@ -126,7 +126,7 @@ class ReorderWhatsappController extends Controller
                 'wa_error_message' => null,
             ]);
 
-            Log::info("[WA SEND] WA berhasil dikirim dan status reorder diperbarui.");
+            Log::info("[WA SEND] WA berhasil dikirim dan status pengadaan ulang diperbarui.");
             return response()->json([
                 'status' => 'success',
                 'message' => 'WA berhasil dikirim ke ' . $user->name,
@@ -167,28 +167,28 @@ class ReorderWhatsappController extends Controller
         if ($reorder->whatsapp_status === 'belum_dikirim') {
             return response()->json([
                 'status' => 'error',
-                'message' => "Reorder dengan status '{$reorder->whatsapp_status}' tidak dapat dibatalkan.",
+                'message' => "Data pengadaan ulang dengan status '{$reorder->whatsapp_status}' tidak dapat dibatalkan.",
             ], 400);
         }
 
         if ($reorder->whatsapp_status === 'dibatalkan') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Reorder ini sudah dibatalkan sebelumnya.'
+                'message' => 'Pengadaan ulang ini sudah dibatalkan sebelumnya.'
             ], 400);
         }
 
         if ($reorder->reorder_status === 'dibatalkan') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Reorder ini sudah dibatalkan sebelumnya.'
+                'message' => 'Pengadaan ulang ini sudah dibatalkan sebelumnya.'
             ], 400);
         }
 
         if ($reorder->reorder_status === 'selesai') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Reorder ini sudah selesai dan tidak dapat dibatalkan.'
+                'message' => 'Pengadaan ulang ini sudah selesai dan tidak dapat dibatalkan.'
             ], 400);
         }
 
@@ -197,7 +197,7 @@ class ReorderWhatsappController extends Controller
             if (!$user) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'User tidak ditemukan pada reorder ini.',
+                    'message' => 'Pengguna tidak ditemukan pada pengadaan ulang ini.',
                 ], 400);
             }
             $to = $this->wa->formatPhone($user->phone_number);
@@ -213,7 +213,7 @@ class ReorderWhatsappController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Pesan pembatalan WA berhasil dikirim ke ' . $user->name,
+                'message' => 'Notifikasi pembatalan WA berhasil dikirim ke ' . $user->name,
                 'data' => $reorder,
             ], 200);
 
@@ -235,7 +235,7 @@ class ReorderWhatsappController extends Controller
             Log::warning("[WA UPDATE] Reorder tidak ditemukan: $reorderId");
             return response()->json([
                 'status' => 'error',
-                'message' => "Reorder dengan ID $reorderId tidak ditemukan."
+                'message' => "Pengadaan ulang dengan ID $reorderId tidak ditemukan."
             ], 404);
         }
 
@@ -269,7 +269,7 @@ class ReorderWhatsappController extends Controller
                     'pending_update_diff' => null,
                     'wa_error_message' => null,
                 ]);
-                $responseMsg = 'Pembatalan WA berhasil dikirim.';
+                $responseMsg = 'Notifikasi pembatalan WA berhasil dikirim.';
             } else {
                 // masih ada qty positif di stock → update
                 $message = $this->wa->buildUpdateMessage($reorder, $diff);
@@ -278,7 +278,7 @@ class ReorderWhatsappController extends Controller
                     'pending_update_diff' => null,
                     'wa_error_message' => null,
                 ]);
-                $responseMsg = 'Pembaruan WA berhasil dikirim.';
+                $responseMsg = 'Notifikasi pembaruan WA berhasil dikirim.';
             }
 
             // Kirim pesan ke WA
