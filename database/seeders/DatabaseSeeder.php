@@ -309,6 +309,17 @@ class DatabaseSeeder extends Seeder
             'phone_number' => '089621317675',
         ]);
 
+        $user13 = User::create([
+            'name' => 'User 9',
+            'email' => 'wirayudhawijaya6@gmail.com',
+            'nip' => '555910',
+            'position' => 'Tendik',
+            'study_program_id' => $studyProgram1->id,
+            'initial' => 'WWY',
+            'role' => 'BAAK',
+            'phone_number' => '089621317679',
+        ]);
+
         $user2 = User::create([
             'name' => 'Kabag Ahmad',
             'email' => 'ahmadfadhil2003@gmail.com',
