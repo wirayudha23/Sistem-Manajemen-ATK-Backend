@@ -66,9 +66,6 @@ class UserController extends Controller
                 'name' => [
                     'required',
                     'string',
-                    Rule::unique('users', 'name')->where(function ($query) use ($request) {
-                        $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
-                    }),
                 ],
                 'email' => 'required|email|unique:users,email',
                 'nip' => 'required|digits:6|integer|unique:users,nip',
@@ -99,7 +96,7 @@ class UserController extends Controller
             $messages = [
                 'name.required' => 'Nama wajib diisi.',
                 'name.string' => 'Nama harus berupa teks.',
-                'name.unique' => 'Nama sudah digunakan.',
+                // 'name.unique' => 'Nama sudah digunakan.',
 
                 'email.required' => 'Email wajib diisi.',
                 'email.email' => 'Format email tidak valid.',
@@ -281,11 +278,7 @@ class UserController extends Controller
                     'name' => [
                         'sometimes',
                         'string',
-                        Rule::unique('users', 'name')
-                            ->ignore($user->id)
-                            ->where(function ($query) use ($request) {
-                                $query->whereRaw('LOWER(name) = ?', [strtolower($request->name)]);
-                            }),
+
                     ],
                     'email' => [
                         'sometimes',
@@ -321,7 +314,7 @@ class UserController extends Controller
 
                 $messages = [
                 'name.string'                  => 'Nama harus berupa teks.',
-                'name.unique'                  => 'Nama sudah digunakan.',
+                // 'name.unique'                  => 'Nama sudah digunakan.',
 
                 'email.email'                  => 'Format email tidak valid.',
                 'email.unique'                 => 'Email sudah terdaftar.',

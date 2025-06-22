@@ -222,7 +222,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $user1 = User::create([
-            'name' => 'Tendik Ahmad',
+            'name' => 'User 1',
             'email' => 'ahmad21si@mahasiswa.pcr.ac.id',
             'nip' => '123456',
             'position' => 'Tendik',
@@ -230,6 +230,83 @@ class DatabaseSeeder extends Seeder
             'initial' => 'WYD',
             'role' => 'BAAK',
             'phone_number' => null,
+        ]);
+
+        $user5 = User::create([
+            'name' => 'User 2',
+            'email' => 'alexasep2304@gmail.com',
+            'nip' => '134679',
+            'position' => 'Tendik',
+            'study_program_id' => $studyProgram2->id,
+            'initial' => 'ALX',
+            'role' => 'BAAK',
+            'phone_number' => null,
+        ]);
+
+        $user6 = User::create([
+            'name' => 'User 3',
+            'email' => 'asepalex2304@gmail.com',
+            'nip' => '135790',
+            'position' => 'Tendik',
+            'study_program_id' => $studyProgram2->id,
+            'initial' => 'RTA',
+            'role' => 'BAAK',
+            'phone_number' => '081238827608',
+        ]);
+
+        $user8 = User::create([
+            'name' => 'User 4',
+            'email' => 'wirayudhawijaya1@gmail.com',
+            'nip' => 555994,
+            'position' => 'Tendik',
+            'study_program_id' => $studyProgram1->id,
+            'initial' => 'YTA',
+            'role' => 'BAAK',
+            'phone_number' => '081238827607',
+        ]);
+
+        $user9 = User::create([
+            'name' => 'User 5',
+            'email' => 'wirayudhawijaya2@gmail.com',
+            'nip' => '555996',
+            'position' => 'Tendik',
+            'study_program_id' => $studyProgram1->id,
+            'initial' => 'WWW',
+            'role' => 'BAAK',
+            'phone_number' => '089621317672',
+        ]);
+
+        $user10 = User::create([
+            'name' => 'User 6',
+            'email' => 'wirayudhawijaya3@gmail.com',
+            'nip' => '555997',
+            'position' => 'Tendik',
+            'study_program_id' => $studyProgram1->id,
+            'initial' => 'WWE',
+            'role' => 'BAAK',
+            'phone_number' => '089621317673',
+        ]);
+
+        $user11 = User::create([
+            'name' => 'User 7',
+            'email' => 'wirayudhawijaya4@gmail.com',
+            'nip' => '555998',
+            'position' => 'Tendik',
+            'study_program_id' => $studyProgram1->id,
+            'initial' => 'WWR',
+            'role' => 'BAAK',
+            'phone_number' => '089621317674',
+        ]);
+
+        $user12 = User::create([
+            'name' => 'User 8',
+            'email' => 'wirayudhawijaya5@gmail.com',
+            'nip' => '555999',
+            'position' => 'Tendik',
+            'study_program_id' => $studyProgram1->id,
+            'initial' => 'WWT',
+            'role' => 'BAAK',
+            'phone_number' => '089621317675',
         ]);
 
         $user2 = User::create([
@@ -265,32 +342,10 @@ class DatabaseSeeder extends Seeder
             'phone_number' => null,
         ]);
 
-        $user5 = User::create([
-            'name' => 'Dosen Ahmad',
-            'email' => 'alexasep2304@gmail.com',
-            'nip' => '134679',
-            'position' => 'Tendik',
-            'study_program_id' => $studyProgram2->id,
-            'initial' => 'ALX',
-            'role' => 'Staff',
-            'phone_number' => null,
-        ]);
-
-        $user6 = User::create([
-            'name' => 'Rumah Tangga Ahmad',
-            'email' => 'asepalex2304@gmail.com',
-            'nip' => '135790',
-            'position' => 'Rumah Tangga',
-            'study_program_id' => $studyProgram2->id,
-            'initial' => 'RTA',
-            'role' => 'Staff',
-            'phone_number' => '081238827608',
-        ]);
-
         $user7 = User::create([
             'name' => 'Mingyu Sarah',
             'email' => 'sarahmingyu@gmail.com',
-            'nip' => 555994,
+            'nip' => 555988,
             'position' => 'Rumah Tangga',
             'study_program_id' => $studyProgram1->id,
             'initial' => 'SNP',
