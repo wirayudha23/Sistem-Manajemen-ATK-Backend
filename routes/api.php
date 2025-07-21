@@ -19,6 +19,7 @@ use App\Http\Controllers\ReorderWhatsappController;
 use App\Http\Controllers\ProductReceivedController;
 use App\Http\Controllers\FundTransactionController;
 use App\Http\Controllers\SocialiteController;
+use App\Http\Controllers\ReportExcelController;
 use App\Http\Controllers\EmailController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -56,6 +57,7 @@ Route::middleware('role')->group(function () {
 // Route::get('/export-checkout', [CheckoutExcelController::class, 'export']);
 // Route::post('/import-checkout', [CheckoutExcelController::class, 'import']);
 
+
 // Route::post('/import-category', [CategoryExcelController::class, 'import']);
 // Route::post('/import-unit', [UnitExcelController::class, 'import']);
 // Route::post('/import-user', [UserExcelController::class, 'import']);
@@ -73,6 +75,8 @@ Route::prefix('categories')->group(function () {
     Route::post('/import', [CategoryExcelController::class, 'import'])->middleware('role:BAAK');
 });
 
+Route::get('/category-template', [CategoryController::class, 'template']);
+
 Route::prefix('units')->group(function () {
     Route::get('/', [UnitController::class, 'index'])->middleware('role:Kabag,BAAK');
     Route::get('/{unit}', [UnitController::class, 'show'])->middleware('role:Kabag,BAAK');
@@ -83,8 +87,10 @@ Route::prefix('units')->group(function () {
     Route::post('/import', [UnitExcelController::class, 'import'])->middleware('role:BAAK');
 });
 
+Route::get('/unit-template', [UnitController::class, 'template']);
+
 Route::prefix('products')->group(function () {
-    Route::get('/', [ProductController::class, 'index'])->middleware('role:Kabag,BAAK');
+    Route::get('/', [ProductController::class, 'index']);
     Route::get('/{product}', [ProductController::class, 'show'])->middleware('role:Kabag,BAAK');
     Route::post('/', [ProductController::class, 'store'])->middleware('role:BAAK');
     Route::put('/{product}', [ProductController::class, 'update'])->middleware('role:BAAK');
@@ -93,6 +99,8 @@ Route::prefix('products')->group(function () {
 
     Route::post('/import', [ProductExcelController::class, 'import'])->middleware('role:BAAK');
 });
+Route::get('public/products', [ProductController::class, 'publicIndex']);
+Route::get('/product-template', [ProductController::class, 'template']);
 
 Route::prefix('study-programs')->group(function () {
     Route::get('/', [StudyProgramController::class, 'index'])->middleware('role:Kabag,BAAK');
@@ -103,18 +111,20 @@ Route::prefix('study-programs')->group(function () {
 });
 
 Route::prefix('users')->group(function () {
-    Route::get('/', [UserController::class, 'index'])->middleware('role:Kabag,BAAK');
+    Route::get('/', [UserController::class, 'index']);
     Route::get('/{user}', [UserController::class, 'show'])->middleware('role:Kabag,BAAK');
-    Route::post('/', [UserController::class, 'store'])->middleware('role:BAAK');
+    Route::post('/', [UserController::class, 'store'])->middleware('role:Kabag,BAAK');
     Route::put('/{user}', [UserController::class, 'update'])->middleware('role:Kabag,BAAK');
     Route::patch('/{user}', [UserController::class, 'update'])->middleware('role:Kabag,BAAK');
-    Route::delete('/{user}', [UserController::class, 'destroy'])->middleware('role:BAAK');
+    Route::delete('/{user}', [UserController::class, 'destroy'])->middleware('role:Kabag,BAAK');
 
     Route::post('/import', [UserExcelController::class, 'import'])->middleware('role:BAAK');
 });
+Route::get('/user-template', [UserController::class, 'template']);
+Route::get('public/users', [UserController::class, 'publicIndex']);
 
 Route::prefix('purposes')->group(function () {
-    Route::get('/', [PurposeController::class, 'index'])->middleware('role:Kabag,BAAK');
+    Route::get('/', [PurposeController::class, 'index']);
     Route::get('/{purpose}', [PurposeController::class, 'show'])->middleware('role:Kabag,BAAK');
     Route::post('/', [PurposeController::class, 'store'])->middleware('role:BAAK');
     Route::put('/{purpose}', [PurposeController::class, 'update'])->middleware('role:BAAK');
@@ -131,12 +141,15 @@ Route::prefix('checkout-carts')->group(function () {
 });
 
 Route::prefix('checkouts')->group(function () {
-    Route::get('/', [CheckoutController::class, 'index'])->middleware('role:Kabag,BAAK');
+    // Route::get('/', [CheckoutController::class, 'index'])->middleware('role:Kabag,BAAK');
+    Route::get('/', [CheckoutController::class, 'index']);
     Route::get('/{checkout}', [CheckoutController::class, 'show'])->middleware('role:Kabag,BAAK');
     Route::post('/', [CheckoutController::class, 'store']);
     Route::put('/{checkout}', [CheckoutController::class, 'update'])->middleware('role:BAAK');
-    Route::patch('/{checkout}', [CheckoutController::class, 'update'])->middleware('role:BAAK');
-    Route::delete('/{checkout}', [CheckoutController::class, 'destroy'])->middleware('role:BAAK');
+    // Route::patch('/{checkout}', [CheckoutController::class, 'update'])->middleware('role:BAAK');
+    Route::patch('/{checkout}', [CheckoutController::class, 'update']);
+    // Route::delete('/{checkout}', [CheckoutController::class, 'destroy'])->middleware('role:BAAK');
+    Route::delete('/{checkout}', [CheckoutController::class, 'destroy']);
 
     Route::post('/import', [CheckoutExcelController::class, 'import'])->middleware('role:BAAK');
     Route::get('/export', [CheckoutExcelController::class, 'export'])->middleware('role:BAAK');
@@ -185,6 +198,8 @@ Route::prefix('funds')->group(function () {
     Route::patch('/{fund}', [FundTransactionController::class, 'update'])->middleware('role:BAAK');
     Route::delete('/{fund}', [FundTransactionController::class, 'destroy'])->middleware('role:BAAK');
 });
+
+Route::get('/export-report', [ReportExcelController::class, 'export']);
 
 
 

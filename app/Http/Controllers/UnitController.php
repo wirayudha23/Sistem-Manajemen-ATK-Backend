@@ -6,6 +6,8 @@ use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\UnitTemplate;
 
 class UnitController extends Controller
 {
@@ -186,5 +188,10 @@ class UnitController extends Controller
                 'message' => 'Internal server error',
             ], 500);
         }
+    }
+
+    public function template()
+    {
+        return Excel::download(new \App\Exports\UnitTemplate, 'unit_template.xlsx');
     }
 }

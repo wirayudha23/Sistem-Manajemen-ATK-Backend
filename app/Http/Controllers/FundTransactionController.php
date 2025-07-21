@@ -59,11 +59,11 @@ class FundTransactionController extends Controller
         try {
             $validated = $request->validate(
                 [
-                    'date' => 'required|date_format:d-m-Y',
+                    // 'date' => 'required|date_format:d-m-Y',
                     'amount' => 'required|integer|min:1',
                 ],
                 [
-                    'date.required' => 'Tanggal tidak boleh kosong.',
+                    // 'date.required' => 'Tanggal tidak boleh kosong.',
                     'date.date_format' => 'Format tanggal harus dd-mm-yyyy.',
                     'amount.required' => 'Jumlah dana tidak boleh kosong.',
                     'amount.integer' => 'Jumlah dana harus berupa angka.',

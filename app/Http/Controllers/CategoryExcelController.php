@@ -15,7 +15,7 @@ class CategoryExcelController extends Controller
             'file' => 'required|file|mimes:xlsx',
         ], [
             'file.required' => 'File Excel wajib diunggah.',
-            'file.file'     => 'File harus berupa file.',
+            'file.file'     => 'File harus berupa file excel.',
             'file.mimes'    => 'File harus berformat .xlsx',
         ]);
 

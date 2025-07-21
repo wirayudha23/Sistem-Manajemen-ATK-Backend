@@ -187,6 +187,7 @@ use Log;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
+
 class CheckoutImport implements ToCollection
 {
     protected $errors = [];
@@ -226,7 +227,6 @@ class CheckoutImport implements ToCollection
                 } else {
                     $parsedDate = Carbon::createFromFormat('d-m-Y', $raw, 'Asia/Jakarta');
                 }
-                // Tambahkan jam sesuai sekarang
                 $now = Carbon::now('Asia/Jakarta');
                 $parsedDate->setTime($now->hour, $now->minute, $now->second);
 
@@ -266,12 +266,12 @@ class CheckoutImport implements ToCollection
             }
 
             // f) Validasi deskripsi
-            $desc = $record['Deskripsi'];
-            if ($desc !== null && strlen($desc) > 2000) {
+            $desc = trim($record['Deskripsi'] ?? '');
+            if (strlen($desc) > 2000) {
                 $rowErrors[] = "Deskripsi maksimal 2000 karakter.";
             }
 
-            // Jika ada error parsing/lookup, simpan & lanjut
+            // Simpan error parsing/lookup, lalu lanjut
             if (!empty($rowErrors)) {
                 foreach ($rowErrors as $msg) {
                     $this->errors[] = "Baris {$barisNomor}: {$msg}";
@@ -279,23 +279,10 @@ class CheckoutImport implements ToCollection
                 continue;
             }
 
-            // g) Grouping key
-            $key = implode('|', [$user->id, $purpose->id, $desc ?? '', $parsedDate->toDateString()]);
+            // g) Grouping key tanpa duplikasi barang
+            $key = implode('|', [$user->id, $purpose->id, $desc, $parsedDate->toDateString()]);
 
-            // h) Cek duplikasi dalam transaksi yang sama
-            if (isset($grouped[$key])) {
-                foreach ($grouped[$key]['items'] as $existing) {
-                    if ($existing['product_id'] === $product->id) {
-                        $this->errors[] = "Baris {$barisNomor}: Nama Barang '{$productName}' muncul lebih dari sekali dalam satu transaksi.";
-                        break;
-                    }
-                }
-                if (!empty($this->errors) && str_contains(end($this->errors), 'muncul lebih dari sekali')) {
-                    continue;
-                }
-            }
-
-            // i) Tambah ke grouping
+            // h) Tambah ke grouping
             if (!isset($grouped[$key])) {
                 $grouped[$key] = [
                     'user_id'       => $user->id,
@@ -311,6 +298,9 @@ class CheckoutImport implements ToCollection
                 'barisNomor'        => $barisNomor,
             ];
         }
+
+        // ** Tambahkan logging jumlah kombinasi unik di sini **
+        \Log::info('Total kombinasi unik transaksi: ' . count($grouped));
 
         // 4) Skip validasi stok dan tidak kurangi stok (untuk memasukkan data historis)
 
@@ -335,7 +325,6 @@ class CheckoutImport implements ToCollection
                         'product_id'        => $detail['product_id'],
                         'checkout_quantity' => $detail['checkout_quantity'],
                     ]);
-                    // Tidak mengurangi stok product
                 }
             }
             DB::commit();
@@ -346,3 +335,5 @@ class CheckoutImport implements ToCollection
         }
     }
 }
+
+

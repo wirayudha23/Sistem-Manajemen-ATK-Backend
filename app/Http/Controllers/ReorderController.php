@@ -75,7 +75,7 @@ class ReorderController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => $validator->errors()->first(),
-            ], 400);
+            ], 422);
         }
 
         $cart = ReorderCart::with('product')->get();
@@ -202,9 +202,36 @@ class ReorderController extends Controller
             ], 400);
         }
 
+        if (
+            $reorder->sent_at !== null
+            && Carbon::today('Asia/Jakarta')->greaterThan(
+                Carbon::parse($reorder->sent_at)
+                    ->timezone('Asia/Jakarta')
+                    ->startOfDay()
+            )
+        ) {
+            // Debug logs
+            \Log::info('[DEBUG] Reorder ID: ' . $reorder->id);
+            \Log::info('[DEBUG] sent_at (raw): ' . $reorder->sent_at);
+            \Log::info('[DEBUG] sent_at (Asia/Jakarta): ' . Carbon::parse($reorder->sent_at)->timezone('Asia/Jakarta'));
+            \Log::info('[DEBUG] sent_at->startOfDay: ' . Carbon::parse($reorder->sent_at)->timezone('Asia/Jakarta')->startOfDay());
+            \Log::info('[DEBUG] today (Asia/Jakarta): ' . Carbon::today('Asia/Jakarta'));
+
+            $sentDate = Carbon::parse($reorder->sent_at)
+                ->timezone('Asia/Jakarta')
+                ->format('Y-m-d');
+            $todayStr = Carbon::today('Asia/Jakarta')->format('Y-m-d');
+
+            return response()->json([
+                'status' => 'error',
+                'message' => "Pengadaan ulang ini sudah dikirim melalui WhatsApp pada tanggal {$sentDate}, dan karena telah melewati 1 hari, data ini tidak dapat diperbarui lagi per tanggal {$todayStr}.",
+            ], 400);
+        }
+
+
         // Snapshot lama untuk diff
         $old = [
-            'delivery_date' => $reorder->delivery_date->format('Y-m-d'),
+            'delivery_date' => \Carbon\Carbon::parse($reorder->delivery_date)->format('Y-m-d'),
             'total_reorder_price' => $reorder->total_reorder_price,
             'items' => $reorder->items
                 ->map(fn($i) => ['product_id' => $i->product_id, 'qty' => $i->reorder_quantity])

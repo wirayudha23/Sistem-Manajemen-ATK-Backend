@@ -68,15 +68,6 @@ class DatabaseSeeder extends Seeder
             'name' => 'Pcs',
         ]);
 
-        $product1 = Product::create([
-            'name' => 'Kertas A4',
-            'price' => 230000,
-            'stock' => 100,
-            'economic_order_quantity' => 10,
-            // 'image' => 'assets/images/default_product.jpg',
-            'category_id' => $kertas->id,
-            'unit_id' => $rim->id,
-        ]);
 
         $product2 = Product::create([
             'name' => 'Buku 3/4 Folio',
@@ -124,33 +115,6 @@ class DatabaseSeeder extends Seeder
             'unit_id' => $pcs->id,
         ]);
 
-        $product7 = Product::create([
-            'name' => 'Spidol Merah',
-            'price' => '8500',
-            'stock' => 100,
-            // 'image' => 'assets/images/default_product.jpg',
-            'category_id' => $alatTulis->id,
-            'unit_id' => $pcs->id,
-        ]);
-
-        $product8 = Product::create([
-            'name' => 'Spidol Hitam',
-            'price' => '8500',
-            'stock' => 100,
-            // 'image' => 'assets/images/default_product.jpg',
-            'category_id' => $alatTulis->id,
-            'unit_id' => $pcs->id,
-        ]);
-
-        $product9 = Product::create([
-            'name' => 'Spidol Biru',
-            'price' => '8500',
-            'stock' => 100,
-            // 'image' => 'assets/images/default_product.jpg',
-            'category_id' => $alatTulis->id,
-            'unit_id' => $pcs->id,
-        ]);
-
         $product10 = Product::create([
             'name' => 'Buku Folio F4',
             'price' => '80000',
@@ -166,24 +130,6 @@ class DatabaseSeeder extends Seeder
             'stock' => 100,
             // 'image' => 'assets/images/default_product.jpg',
             'category_id' => $plastik->id,
-            'unit_id' => $pcs->id,
-        ]);
-
-        $product12 = Product::create([
-            'name' => 'Sticky Note',
-            'price' => '15000',
-            'stock' => 100,
-            // 'image' => 'assets/images/default_product.jpg',
-            'category_id' => $stickyNote->id,
-            'unit_id' => $pcs->id,
-        ]);
-
-        $product13 = Product::create([
-            'name' => 'Isolasi Kertas',
-            'price' => '15000',
-            'stock' => 100,
-            // 'image' => 'assets/images/default_product.jpg',
-            'category_id' => $isolasi->id,
             'unit_id' => $pcs->id,
         ]);
 
@@ -251,7 +197,7 @@ class DatabaseSeeder extends Seeder
             'study_program_id' => $studyProgram2->id,
             'initial' => 'RTA',
             'role' => 'BAAK',
-            'phone_number' => '081238827608',
+            'phone_number' => '081238827690',
         ]);
 
         $user8 = User::create([
@@ -286,6 +232,30 @@ class DatabaseSeeder extends Seeder
             'role' => 'BAAK',
             'phone_number' => '089621317673',
         ]);
+
+        $user14 = User::create([
+            'name' => 'User 6',
+            'email' => 'sn30052002@gmail.com',
+            'nip' => '555778',
+            'position' => 'Tendik',
+            'study_program_id' => $studyProgram1->id,
+            'initial' => 'KBS',
+            'role' => 'Kabag',
+            'phone_number' => '089621817673',
+        ]);
+
+        $user15 = User::create([
+            'name' => 'RT User',
+            'email' => 'apaaja@gmail.com',
+            'nip' => '555723',
+            'position' => 'Rumah Tangga',
+            'study_program_id' => $studyProgram1->id,
+            'initial' => 'UUU',
+            'role' => 'Staff',
+            'phone_number' => '081238827608',
+        ]);
+
+
 
         $user11 = User::create([
             'name' => 'User 7',
@@ -324,10 +294,10 @@ class DatabaseSeeder extends Seeder
             'name' => 'Kabag Ahmad',
             'email' => 'ahmadfadhil2003@gmail.com',
             'nip' => '122334',
-            'position' => 'Tendik',
+            'position' => 'Dosen',
             'study_program_id' => $studyProgram1->id,
             'initial' => 'AFW',
-            'role' => 'Kabag',
+            'role' => 'Staff',
             'phone_number' => null,
         ]);
 
@@ -366,7 +336,7 @@ class DatabaseSeeder extends Seeder
 
 
         CheckoutCart::create([
-            'product_id' => $product1->id,
+            'product_id' => $product10->id,
             'checkout_quantity' => 2,
         ]);
 
@@ -381,7 +351,7 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         ReorderCart::create([
-            'product_id' => $product1->id,
+            'product_id' => $product10->id,
             'reorder_quantity' => 10,
         ]);
 

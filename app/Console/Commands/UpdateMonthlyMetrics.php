@@ -18,7 +18,7 @@ class UpdateMonthlyMetrics extends Command
     /**
      * The console command description.
      *
-     * @var string
+     * @var string  
      */
     protected $description = 'Update Safety Stock and ROP for all Products';
 

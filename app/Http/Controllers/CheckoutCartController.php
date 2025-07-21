@@ -100,6 +100,7 @@ class CheckoutCartController extends Controller
             }
 
             $checkoutCart = CheckoutCart::create([
+                // 'id' => (string) \Illuminate\Support\Str::uuid(),
                 'product_id' => $request->product_id,
                 'checkout_quantity' => $request->checkout_quantity,
             ]);

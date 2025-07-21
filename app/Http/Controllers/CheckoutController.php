@@ -21,39 +21,42 @@ use Illuminate\Support\Facades\Mail;
 
 class CheckoutController extends Controller
 {
-
     public function index(Request $request)
-    {
-        try {
-            $page = $request->get('page', 1);
-            $limit = $request->get('limit', 10);
-            $sort_column = $request->get('sort_column', 'checkout_date');
-            $sort_type = $request->get('sort_type', 'desc');
-            $search = $request->get('search', '');
+{
+    try {
+        $page       = $request->get('page', 1);
+        $limit      = $request->get('limit', 10);
+        $sortColumn = $request->get('sort_column', 'checkout_date');
+        $sortType   = $request->get('sort_type', 'desc');
+        $search     = $request->get('search', '');
 
-            $query = Checkout::query()->with('items.product');
+        $query = Checkout::query()->with('items.product');
 
-            if ($search) {
-                $query->where('initial', 'like', '%' . $search . '%');
-            }
-
-            $checkouts = $query
-                ->orderBy($sort_column, $sort_type)
-                ->paginate($limit, ['*'], 'page', $page);
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Checkouts fetched successfully',
-                'data' => $checkouts->load('items.product'),
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Internal server error',
-            ], 500);
-
+        if ($search) {
+            $query->where('initial', 'like', '%' . $search . '%');
         }
+
+        $paginator = $query
+            ->orderBy($sortColumn, $sortType)
+            ->paginate($limit, ['*'], 'page', $page);
+
+        // Mengambil data lengkap pagination termasuk URLs
+        $responseData = $paginator->toArray();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Checkouts fetched successfully',
+            'data'    => $responseData,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status'  => 'error',
+            'message' => 'Internal server error',
+        ], 500);
     }
+}
+
+
     public function store(Request $request)
     {
         // Validasi input

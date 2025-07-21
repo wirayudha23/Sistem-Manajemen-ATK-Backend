@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\UserTemplate;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
@@ -9,6 +10,8 @@ use Illuminate\Support\Facades\Auth;
 use Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+use App\Exports\UserExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class UserController extends Controller
 {
@@ -213,6 +216,7 @@ class UserController extends Controller
             ], 500);
         }
     }
+
     public function update(Request $request, User $user)
     {
         try {
@@ -233,70 +237,103 @@ class UserController extends Controller
                 ], 404);
             }
 
-            // Only Kabag and BAAK have update rights
+            // Jika role saat ini adalah Kabag
             if ($currentUser->role === 'Kabag') {
-                // Prevent self-promotion
-                if ($currentUser->id === $user->id) {
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Kabag tidak dapat mempromosikan dirinya sendiri',
-                    ], 403);
-                }
-
-                // Only users with role BAAK can be promoted
+                // Hanya boleh mengedit pengguna dengan role BAAK
                 if ($user->role !== 'BAAK') {
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Hanya pengguna dengan role BAAK yang dapat dipromosikan menjadi Kabag',
-                    ], 400);
+                        'message' => 'Kabag hanya dapat mengedit pengguna dengan role BAAK.',
+                    ], 403);
                 }
 
-                // Ensure new role is Kabag
-                $newRole = $request->input('role');
-                if ($newRole !== 'Kabag') {
+                // Reuse validasi BAAK, kecuali field position
+                $rules = [
+                    'name' => ['sometimes', 'string'],
+                    'email' => ['sometimes', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+                    'nip' => ['sometimes', 'digits:6', 'integer', Rule::unique('users', 'nip')->ignore($user->id)],
+                    'initial' => ['sometimes', 'alpha', 'size:3', Rule::unique('users', 'initial')->ignore($user->id)],
+                    'role' => ['sometimes', Rule::in(['Kabag'])],
+                    'study_program_id' => ['sometimes', 'nullable', Rule::exists('study_programs', 'id')],
+                    'avatar' => ['sometimes', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
+                    'phone_number' => [
+                        Rule::requiredIf($request->input('position', $user->position) === 'Rumah Tangga'),
+                        'nullable',
+                        'string',
+                        'min:11',
+                        'max:12',
+                        "regex:/^08\\d{9,10}$/",
+                        Rule::unique('users', 'phone_number')->ignore($user->id),
+                    ],
+                ];
+
+                $messages = [
+                    'name.string' => 'Nama harus berupa teks.',
+                    'email.email' => 'Format email tidak valid.',
+                    'email.unique' => 'Email sudah terdaftar.',
+                    'nip.digits' => 'NIP harus terdiri dari :digits digit.',
+                    'nip.integer' => 'NIP harus berupa angka.',
+                    'nip.unique' => 'NIP sudah terdaftar.',
+                    'initial.alpha' => 'Inisial hanya boleh huruf.',
+                    'initial.size' => 'Inisial harus tepat :size huruf.',
+                    'initial.unique' => 'Inisial sudah digunakan.',
+                    'phone_number.required_if' => 'No. handphone wajib diisi untuk posisi Rumah Tangga.',
+                    'phone_number.min' => 'No. handphone minimal :min karakter.',
+                    'phone_number.max' => 'No. handphone maksimal :max karakter.',
+                    'phone_number.regex' => 'No. handphone harus diawali 08 dan panjang 11–12 angka.',
+                    'phone_number.unique' => 'No. handphone sudah terdaftar.',
+                    'study_program_id.exists' => 'Program studi tidak ditemukan.',
+                    'avatar.image' => 'File harus berupa gambar.',
+                    'avatar.mimes' => 'Format gambar hanya boleh: jpeg, png, jpg, gif, svg.',
+                    'avatar.max' => 'Ukuran gambar maksimal :max kilobyte.',
+                ];
+
+                $validator = Validator::make($request->all(), $rules, $messages);
+
+                if ($validator->fails()) {
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Role harus diubah menjadi Kabag untuk promosi',
-                    ], 400);
+                        'message' => 'Validation error',
+                        'errors' => $validator->errors(),
+                    ], 422);
                 }
 
-                // Perform atomic promotion and demotion
-                DB::transaction(function () use ($user, $currentUser) {
-                    $user->update(['role' => 'Kabag']);
-                    $currentUser->update(['role' => 'Staff']);
+                $data = $validator->validated();
+
+                // Untuk Kabag, posisi tidak boleh diubah, jadi tidak reset study_program_id atau phone_number berdasarkan posisi baru
+                // Tetapi jika posisi lama bukan Dosen atau Rumah Tangga, tetap jaga data lama
+                // (tidak ada perubahan untuk study_program_id/phone_number di sini)
+
+                if ($request->hasFile('avatar')) {
+                    $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
+                }
+
+                // Update dalam transaksi atomik
+                DB::transaction(function () use ($data, $user, $currentUser) {
+                    // Update target user
+                    $user->update($data);
+
+                    // Jika Kabag mengubah role menjadi 'Kabag' (promosi ulang BAAK → Kabag), demote Kabag saat ini
+                    if (isset($data['role']) && $data['role'] === 'Kabag') {
+                        $currentUser->update(['role' => 'Staff']);
+                    }
                 });
 
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'Pengguna berhasil dipromosikan menjadi Kabag',
-                    'data' => $user,
+                    'message' => 'Data pengguna berhasil diperbarui oleh Kabag',
+                    'data' => $user->fresh(),
                 ], 200);
+            }
 
-            } elseif ($currentUser->role === 'BAAK') {
-                // Validation rules aligned with store()
+            // Jika role saat ini adalah BAAK
+            elseif ($currentUser->role === 'BAAK') {
+                // Sama persis seperti sebelumnya, termasuk after() closure untuk validasi posisi
                 $rules = [
-                    'name' => [
-                        'sometimes',
-                        'string',
-
-                    ],
-                    'email' => [
-                        'sometimes',
-                        'email',
-                        Rule::unique('users', 'email')->ignore($user->id),
-                    ],
-                    'nip' => [
-                        'sometimes',
-                        'digits:6',
-                        'integer',
-                        Rule::unique('users', 'nip')->ignore($user->id),
-                    ],
-                    'initial' => [
-                        'sometimes',
-                        'alpha',
-                        'size:3',
-                        Rule::unique('users', 'initial')->ignore($user->id),
-                    ],
+                    'name' => ['sometimes', 'string'],
+                    'email' => ['sometimes', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+                    'nip' => ['sometimes', 'digits:6', 'integer', Rule::unique('users', 'nip')->ignore($user->id)],
+                    'initial' => ['sometimes', 'alpha', 'size:3', Rule::unique('users', 'initial')->ignore($user->id)],
                     'position' => ['sometimes', 'string', 'in:Dosen,Tendik,Rumah Tangga'],
                     'role' => ['sometimes', 'string'],
                     'study_program_id' => ['sometimes', 'nullable', Rule::exists('study_programs', 'id')],
@@ -313,38 +350,29 @@ class UserController extends Controller
                 ];
 
                 $messages = [
-                'name.string'                  => 'Nama harus berupa teks.',
-                // 'name.unique'                  => 'Nama sudah digunakan.',
+                    'name.string' => 'Nama harus berupa teks.',
+                    'email.email' => 'Format email tidak valid.',
+                    'email.unique' => 'Email sudah terdaftar.',
+                    'nip.digits' => 'NIP harus terdiri dari :digits digit.',
+                    'nip.integer' => 'NIP harus berupa angka.',
+                    'nip.unique' => 'NIP sudah terdaftar.',
+                    'initial.alpha' => 'Inisial hanya boleh huruf.',
+                    'initial.size' => 'Inisial harus tepat :size huruf.',
+                    'initial.unique' => 'Inisial sudah digunakan.',
+                    'position.in' => 'Posisi yang dipilih tidak valid.',
+                    'phone_number.required_if' => 'No. handphone wajib diisi untuk posisi Rumah Tangga.',
+                    'phone_number.min' => 'No. handphone minimal :min karakter.',
+                    'phone_number.max' => 'No. handphone maksimal :max karakter.',
+                    'phone_number.regex' => 'No. handphone harus diawali 08 dan panjang 11–12 angka.',
+                    'phone_number.unique' => 'No. handphone sudah terdaftar.',
+                    'study_program_id.exists' => 'Program studi tidak ditemukan.',
+                    'avatar.image' => 'File harus berupa gambar.',
+                    'avatar.mimes' => 'Format gambar hanya boleh: jpeg, png, jpg, gif, svg.',
+                    'avatar.max' => 'Ukuran gambar maksimal :max kilobyte.',
+                ];
 
-                'email.email'                  => 'Format email tidak valid.',
-                'email.unique'                 => 'Email sudah terdaftar.',
+                $validator = Validator::make($request->all(), $rules, $messages);
 
-                'nip.digits'                   => 'NIP harus terdiri dari :digits digit.',
-                'nip.integer'                  => 'NIP harus berupa angka.',
-                'nip.unique'                   => 'NIP sudah terdaftar.',
-
-                'initial.alpha'                => 'Inisial hanya boleh huruf.',
-                'initial.size'                 => 'Inisial harus tepat :size huruf.',
-                'initial.unique'               => 'Inisial sudah digunakan.',
-
-                'position.in'                  => 'Posisi yang dipilih tidak valid.',
-
-                'phone_number.required_if'     => 'No. handphone wajib diisi untuk posisi Rumah Tangga.',
-                'phone_number.min'             => 'No. handphone minimal :min karakter.',
-                'phone_number.max'             => 'No. handphone maksimal :max karakter.',
-                'phone_number.regex'           => 'No. handphone harus diawali 08 dan panjang 11–12 angka.',
-                'phone_number.unique'          => 'No. handphone sudah terdaftar.',
-
-                'study_program_id.exists'      => 'Program studi tidak ditemukan.',
-
-                'avatar.image'                 => 'File harus berupa gambar.',
-                'avatar.mimes'                 => 'Format gambar hanya boleh: jpeg, png, jpg, gif, svg.',
-                'avatar.max'                   => 'Ukuran gambar maksimal :max kilobyte.',
-            ];
-
-                $validator = Validator::make($request->all(), $rules);
-
-                // Conditional checks: keep existing after() logic
                 $validator->after(function ($validator) use ($request, $user) {
                     $pos = $request->input('position', $user->position);
                     $role = $request->input('role', $user->role);
@@ -378,13 +406,11 @@ class UserController extends Controller
                     ], 422);
                 }
 
-                // Prepare update data
                 $data = $validator->validated();
 
                 if (isset($data['position']) && $data['position'] !== 'Dosen') {
                     $data['study_program_id'] = null;
                 }
-
                 if (isset($data['position']) && $data['position'] !== 'Rumah Tangga') {
                     $data['phone_number'] = null;
                 }
@@ -393,7 +419,6 @@ class UserController extends Controller
                     $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
                 }
 
-                // Perform update
                 $user->update($data);
 
                 return response()->json([
@@ -401,13 +426,13 @@ class UserController extends Controller
                     'message' => 'Data pengguna berhasil diperbarui',
                     'data' => $user,
                 ], 200);
-
-            } else {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Unauthorized access',
-                ], 401);
             }
+
+            // Unauthorized jika bukan Kabag atau BAAK
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized access',
+            ], 401);
 
         } catch (\Exception $e) {
             return response()->json([
@@ -418,10 +443,16 @@ class UserController extends Controller
         }
     }
 
-
     public function destroy(User $user)
     {
         try {
+            if ($user->role === 'Kabag') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Pengguna dengan role Kabag tidak dapat dihapus',
+                ], 403);
+            }
+
             $user->delete();
 
             return response()->json([
@@ -435,5 +466,15 @@ class UserController extends Controller
                 'message' => 'Internal server error' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function publicIndex()
+    {
+        return User::select('id', 'name', 'email', 'initial', 'position', 'role')->get();
+    }
+
+    public function template()
+    {
+        return Excel::download(new UserTemplate, 'template_user.xlsx');
     }
 }

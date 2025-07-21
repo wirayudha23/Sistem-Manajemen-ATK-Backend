@@ -22,7 +22,7 @@ class ProductExcelController extends Controller
         ], [
             'file.required' => 'File Excel wajib diunggah.',
             'file.file'     => 'File harus berupa file Excel.',
-            'file.mimes'    => 'File harus berformat .xlsx atau .xls',
+            'file.mimes'    => 'File harus berformat .xlsx',
         ]);
 
         if ($validator->fails()) {

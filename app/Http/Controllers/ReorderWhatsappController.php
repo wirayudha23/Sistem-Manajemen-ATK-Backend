@@ -164,6 +164,13 @@ class ReorderWhatsappController extends Controller
             ], 404);
         }
 
+        if ($reorder->receivings()->exists()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pengadaan ulang ini sudah diterima dan tidak dapat dibatalkan.'
+            ], 400);
+        }
+
         if ($reorder->whatsapp_status === 'belum_dikirim') {
             return response()->json([
                 'status' => 'error',

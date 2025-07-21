@@ -11,7 +11,13 @@ class SocialiteController extends Controller
 {
     public function redirect()
     {
-        return Socialite::driver('google')->stateless()->redirect();
+        return Socialite::driver('google')
+            ->stateless()
+            ->with([
+                'access_type' => 'offline',
+                'prompt' => 'select_account',
+            ])
+            ->redirect();
     }
 
     public function callback()
@@ -36,7 +42,7 @@ class SocialiteController extends Controller
         }
 
         // 2) Update data Google (ID, name, avatar)
-        if (! $user->google_id) {
+        if (!$user->google_id) {
             $user->google_id = $googleUser->getId();
             $user->name = $googleUser->getName();
             $user->avatar = $googleUser->getAvatar();

@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Log;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+
 
 class ProductController extends Controller
 {
@@ -193,8 +195,8 @@ class ProductController extends Controller
                     'price.integer' => 'Harga harus berupa angka.',
                     'price.min' => 'Harga tidak boleh kurang dari 0',
 
-                    'stock.integer' => 'Stok harus berupa angka.',
-                    'stock.min' => 'Stok tidak boleh kurang dari 0',
+                    // 'stock.integer' => 'Stok harus berupa angka.',
+                    // 'stock.min' => 'Stok tidak boleh kurang dari 0',
 
                     'image.image' => 'File harus berupa gambar.',
                     'image.mimes' => 'Format gambar hanya boleh: png, jpg, jpeg.',
@@ -266,5 +268,18 @@ class ProductController extends Controller
                 'message' => 'Internal server error',
             ], 500);
         }
+    }
+
+    public function publicIndex()
+    {
+        return Product::select('id', 'name', 'image', 'price', 'stock')->get();
+    }
+
+    public function template()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\ProductTemplate,
+            'product_template.xlsx',
+            'Xlsx');
     }
 }

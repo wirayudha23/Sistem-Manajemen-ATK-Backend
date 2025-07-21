@@ -6,7 +6,8 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
-use Illuminate\Support\Str;
+use App\Exports\CategoryTemplate;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CategoryController extends Controller
 {
@@ -156,7 +157,7 @@ class CategoryController extends Controller
                     'status' => 'error',
                     'message' => 'Validation error',
                     'errors' => $validator->errors(),
-                ], 400);
+                ], 422);
             }
 
             // 2. Ambil data yang tervalidasi (hanya 'name' kalau dikirim)
@@ -195,5 +196,10 @@ class CategoryController extends Controller
                 'message' => 'Internal server error',
             ], 500);
         }
+    }
+
+    public function template()
+    {
+        return Excel::download(new CategoryTemplate(), 'category_template.xlsx');
     }
 }
