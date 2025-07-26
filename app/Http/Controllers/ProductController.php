@@ -20,8 +20,6 @@ class ProductController extends Controller
         try {
             $page = $request->get('page', 1);
             $limit = $request->get('limit', 10);
-            $sortColumn = $request->get('sort_column', 'name');
-            $sortType = $request->get('sort_type', 'asc');
             $search = $request->get('search', '');
             $searchColumn = $request->get('search_column', 'name');
 
@@ -29,23 +27,12 @@ class ProductController extends Controller
 
             // -- SEARCH --
             if ($search) {
-                if ($searchColumn) {
-                    $query->where($searchColumn, 'like', "%{$search}%");
-                } else {
-                    $query->where('name', 'like', "%{$search}%");
-                }
+                $query->where($searchColumn, 'like', "%{$search}%");
             }
 
-            // -- SORTING --
-            if ($sortColumn === 'stock') {
-                // Jika sort_column=stock, artinya klien ingin urutan berdasarkan kedekatan stock ke ROP
-                $query->orderByRaw("ABS(stock - reorder_point) {$sortType}")
-                    // tiebreaker: urutkan juga by stock/reorder_point kalau perlu
-                    ->orderBy('stock', $sortType);
-            } else {
-                // Urutan normal sesuai kolom yang diminta
-                $query->orderBy($sortColumn, $sortType);
-            }
+            // -- SORT A–Z BERDASARKAN NAME --
+            // hilangkan logika stock/ROP, paksa urutan berdasarkan name ascending
+            $query->orderBy('name', 'asc');
 
             $products = $query->paginate($limit, ['*'], 'page', $page);
 
@@ -115,7 +102,7 @@ class ProductController extends Controller
             $data['stock'] = 0;
 
             DB::transaction(function () use ($request, &$product, &$data) {
-                $data['image'] =  $request->file('image')->store('images', 'public');
+                $data['image'] = $request->file('image')->store('images', 'public');
                 // $data['image'] = 'storage/' . $request->file('image')->store('images', 'public');
                 $product = Product::create($data);
             });
@@ -280,6 +267,7 @@ class ProductController extends Controller
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Exports\ProductTemplate,
             'product_template.xlsx',
-            'Xlsx');
+            'Xlsx'
+        );
     }
 }

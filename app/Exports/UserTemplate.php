@@ -88,7 +88,7 @@ class UserTemplate implements
     public function columnFormats(): array
     {
         return [
-            'H' => NumberFormat::FORMAT_TEXT,
+            'H:H' => NumberFormat::FORMAT_TEXT,
         ];
     }
 

@@ -116,9 +116,10 @@ class CheckoutController extends Controller
                 'user_id' => $request->user_id,
                 'purpose_id' => $request->purpose_id,
                 'description' => $request->description,
-                'checkout_date' => $request->checkout_date
-                    ? Carbon::parse($request->checkout_date)->setTimezone('Asia/Jakarta')
-                    : Carbon::now()->setTimezone('Asia/Jakarta'),
+                'checkout_date' => Carbon::now()->setTimezone('Asia/Jakarta'),
+                // $request->checkout_date
+                //     ? Carbon::parse($request->checkout_date)->setTimezone('Asia/Jakarta')
+                //     : Carbon::now()->setTimezone('Asia/Jakarta'),
             ]);
 
             // Buat detail checkout dan kurangi stok
