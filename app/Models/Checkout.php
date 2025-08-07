@@ -16,6 +16,7 @@ class Checkout extends Model
 
     protected $fillable = [
         'user_id',
+        // 'initial',
         'purpose_id',
         'checkout_date',
         'description',

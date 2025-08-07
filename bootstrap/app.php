@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([
         AboutCommand::class,
         \App\Console\Commands\UpdateInventoryMetrics::class,
+        \App\Console\Commands\PreloadPegawaiData::class,
     ])
     ->withSchedule(function (Schedule $schedule) {
         $schedule->command('inventory:update-monthly-metrics')

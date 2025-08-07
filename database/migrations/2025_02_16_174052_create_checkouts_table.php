@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('checkouts', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('user_id');
+            // $table->string('initial');
             $table->dateTime('checkout_date');
             $table->uuid('purpose_id');
             $table->text('description')->nullable();

@@ -37,6 +37,16 @@ class User extends Authenticatable
         $this->attributes['initial'] = Str::upper(trim($value));
     }
 
+    public function scopeByNip($query, $nip)
+    {
+        return $query->where('nip', $nip);
+    }
+
+    public function scopeByInitial($query, $initial)
+    {
+        return $query->where('initial', $initial);
+    }
+
     public function checkouts()
     {
         return $this->hasMany(Checkout::class);

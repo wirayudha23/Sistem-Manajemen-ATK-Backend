@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('nip')->unique()->nullable();
             $table->string('position');
             $table->string('initial')->unique()->nullable();
-            $table->string('role');
+            $table->string('role')->nullable();
             $table->string('phone_number', 12)->unique()->nullable();
             $table->string('avatar')->nullable()->default('assets/images/default_avatar.jpg');
             $table->timestamp('email_verified_at')->nullable();

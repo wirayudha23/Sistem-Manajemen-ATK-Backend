@@ -22,40 +22,39 @@ use Illuminate\Support\Facades\Mail;
 class CheckoutController extends Controller
 {
     public function index(Request $request)
-{
-    try {
-        $page       = $request->get('page', 1);
-        $limit      = $request->get('limit', 10);
-        $sortColumn = $request->get('sort_column', 'checkout_date');
-        $sortType   = $request->get('sort_type', 'desc');
-        $search     = $request->get('search', '');
+    {
+        try {
+            $page = $request->get('page', 1);
+            $limit = $request->get('limit', 10);
+            $sortColumn = $request->get('sort_column', 'checkout_date');
+            $sortType = $request->get('sort_type', 'desc');
+            $search = $request->get('search', '');
 
-        $query = Checkout::query()->with('items.product');
+            $query = Checkout::query()->with('items.product');
 
-        if ($search) {
-            $query->where('initial', 'like', '%' . $search . '%');
+            if ($search) {
+                $query->where('initial', 'like', '%' . $search . '%');
+            }
+
+            $paginator = $query
+                ->orderBy($sortColumn, $sortType)
+                ->paginate($limit, ['*'], 'page', $page);
+
+            // Mengambil data lengkap pagination termasuk URLs
+            $responseData = $paginator->toArray();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Checkouts fetched successfully',
+                'data' => $responseData,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Internal server error',
+            ], 500);
         }
-
-        $paginator = $query
-            ->orderBy($sortColumn, $sortType)
-            ->paginate($limit, ['*'], 'page', $page);
-
-        // Mengambil data lengkap pagination termasuk URLs
-        $responseData = $paginator->toArray();
-
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Checkouts fetched successfully',
-            'data'    => $responseData,
-        ], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status'  => 'error',
-            'message' => 'Internal server error',
-        ], 500);
     }
-}
-
 
     public function store(Request $request)
     {
@@ -65,9 +64,9 @@ class CheckoutController extends Controller
             [
                 'user_id' => [
                     'required',
-                    Rule::exists('users', 'id')->where(function ($query) {
-                        $query->where('role', 'Staff');
-                    }),
+                    // Rule::exists('users', 'id')->where(function ($query) {
+                    //     $query->where('role', 'Staff');
+                    // }),
                 ],
                 'purpose_id' => ['required', Rule::exists('purposes', 'id')],
                 'description' => ['nullable', 'string', 'max:2000'],
@@ -75,7 +74,7 @@ class CheckoutController extends Controller
             ],
             [
                 'user_id.required' => 'Inisial wajib diisi',
-                'user_id.exists' => 'Inisial tidak ditemukan atau bukan Staff',
+                'user_id.exists' => 'Inisial tidak ditemukan',
                 'purpose_id.required' => 'Kebutuhan wajib diisi',
                 'purpose_id.exists' => 'Kebutuhan tidak ditemukan',
                 'description.max' => 'Deskripsi tidak boleh lebih dari 2000 karakter',
@@ -179,7 +178,6 @@ class CheckoutController extends Controller
             ], 500);
         }
     }
-
 
     public function show($id)
     {

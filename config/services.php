@@ -36,13 +36,17 @@ return [
     ],
 
     'google' => [
-    'client_id' => env('GOOGLE_CLIENT_ID'),
-    'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-    'redirect' => env('GOOGLE_REDIRECT_URI'),
-],
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+    ],
     'fonnte' => [
-    'token'    => env('FONNTE_API_TOKEN'),
-    'base_url' => env('FONNTE_BASE_URL'),
-],
+        'token' => env('FONNTE_API_TOKEN'),
+        'base_url' => env('FONNTE_BASE_URL'),
+    ],
+
+    'pcr_api' => [
+        'key' => env('PCR_API_KEY'),
+    ],
 
 ];

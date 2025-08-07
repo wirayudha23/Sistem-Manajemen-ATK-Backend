@@ -15,27 +15,48 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class UserController extends Controller
 {
+
     public function index(Request $request)
     {
         try {
+            // Pagination default: 10 items per page
+            $limit = 10;
             $page = $request->get('page', 1);
-            $limit = $request->get('limit', 10);
-            $sort_column = $request->get('sort_column', 'id');
-            $sort_type = $request->get('sort_type', 'asc');
+
+            // Sorting
+            $sort_column = 'name';
+            $sort_type = 'asc';
+
+            // Search & filter parameters
             $search = $request->get('search', '');
             $search_column = $request->get('search_column', '');
+            $role = $request->get('role', null);  // tambahkan parameter role
+            $position = $request->get('position', null); // tambahkan parameter posisi
 
             $query = User::query();
 
-            if ($search_column && $search) {
-                $query->where($search_column, 'like', '%' . $search . '%');
-            } else if ($search) {
-                $query
-                    ->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('email', 'like', '%' . $search . '%')
-                    ->orWhere('role', 'like', '%' . $search . '%');
+            // Filter berdasarkan role jika ada
+            if ($role) {
+                $query->where('role', $role);
             }
 
+            // Filter berdasarkan posisi jika ada
+            if ($position) {
+                $query->where('position', $position);
+            }
+
+            // Apply search filter
+            if ($search_column && $search) {
+                $query->where($search_column, 'like', "%{$search}%");
+            } elseif ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('role', 'like', "%{$search}%");
+                });
+            }
+
+            // Paginate hasil yang sudah difilter dan di-sort
             $users = $query
                 ->orderBy($sort_column, $sort_type)
                 ->paginate($limit, ['*'], 'page', $page);
@@ -45,6 +66,7 @@ class UserController extends Controller
                 'message' => 'Users fetched successfully',
                 'data' => $users,
             ], 200);
+
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
@@ -52,6 +74,8 @@ class UserController extends Controller
             ], 500);
         }
     }
+
+
 
     public function store(Request $request)
     {
@@ -154,7 +178,7 @@ class UserController extends Controller
             // Retrieve validated data
             $data = $validator->validated();
 
-            if (($data['position'] ?? null) !== 'Rumah Tangga') {
+            if (($data['position'] ?? null) !== 'Staff') {
                 $data['phone_number'] = null;
             }
 
@@ -257,7 +281,7 @@ class UserController extends Controller
                     'study_program_id' => ['sometimes', 'nullable', Rule::exists('study_programs', 'id')],
                     'avatar' => ['sometimes', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
                     'phone_number' => [
-                        Rule::requiredIf($request->input('position', $user->position) === 'Rumah Tangga'),
+                        Rule::requiredIf($request->input('position', $user->position) === 'RUmah Tangga'),
                         'nullable',
                         'string',
                         'min:11',
@@ -339,7 +363,7 @@ class UserController extends Controller
                     'study_program_id' => ['sometimes', 'nullable', Rule::exists('study_programs', 'id')],
                     'avatar' => ['sometimes', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
                     'phone_number' => [
-                        Rule::requiredIf($request->input('position', $user->position) === 'Rumah Tangga'),
+                        Rule::requiredIf($request->input('position', $user->position) === 'Staff'),
                         'nullable',
                         'string',
                         'min:11',
