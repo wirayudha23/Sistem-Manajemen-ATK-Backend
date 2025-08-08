@@ -160,179 +160,179 @@ class DatabaseSeeder extends Seeder
             'unit_id' => $rim->id,
         ]);
 
-        $studyProgram1 = \App\Models\StudyProgram::create([
-            'name' => 'Teknik Informatika',
-        ]);
-        $studyProgram2 = \App\Models\StudyProgram::create([
-            'name' => 'Sistem Informasi',
-        ]);
+        // $studyProgram1 = \App\Models\StudyProgram::create([
+        //     'name' => 'Teknik Informatika',
+        // ]);
+        // $studyProgram2 = \App\Models\StudyProgram::create([
+        //     'name' => 'Sistem Informasi',
+        // ]);
 
-        $user1 = User::create([
-            'name' => 'User 1',
-            'email' => 'ahmad21si@mahasiswa.pcr.ac.id',
-            'nip' => '123456',
-            'position' => 'Tendik',
-            'study_program_id' => $studyProgram2->id,
-            'initial' => 'WYD',
-            'role' => 'BAAK',
-            'phone_number' => null,
-        ]);
+        // $user1 = User::create([
+        //     'name' => 'User 1',
+        //     'email' => 'ahmad21si@mahasiswa.pcr.ac.id',
+        //     'nip' => '123456',
+        //     'position' => 'Tendik',
+        //     'study_program_id' => $studyProgram2->id,
+        //     'initial' => 'WYD',
+        //     'role' => 'BAAK',
+        //     'phone_number' => null,
+        // ]);
 
-        $user5 = User::create([
-            'name' => 'User 2',
-            'email' => 'alexasep2304@gmail.com',
-            'nip' => '134679',
-            'position' => 'Tendik',
-            'study_program_id' => $studyProgram2->id,
-            'initial' => 'ALX',
-            'role' => 'BAAK',
-            'phone_number' => null,
-        ]);
+        // $user5 = User::create([
+        //     'name' => 'User 2',
+        //     'email' => 'alexasep2304@gmail.com',
+        //     'nip' => '134679',
+        //     'position' => 'Tendik',
+        //     'study_program_id' => $studyProgram2->id,
+        //     'initial' => 'ALX',
+        //     'role' => 'BAAK',
+        //     'phone_number' => null,
+        // ]);
 
-        $user6 = User::create([
-            'name' => 'User 3',
-            'email' => 'asepalex2304@gmail.com',
-            'nip' => '135790',
-            'position' => 'Tendik',
-            'study_program_id' => $studyProgram2->id,
-            'initial' => 'RTA',
-            'role' => 'BAAK',
-            'phone_number' => '081238827690',
-        ]);
+        // $user6 = User::create([
+        //     'name' => 'User 3',
+        //     'email' => 'asepalex2304@gmail.com',
+        //     'nip' => '135790',
+        //     'position' => 'Tendik',
+        //     'study_program_id' => $studyProgram2->id,
+        //     'initial' => 'RTA',
+        //     'role' => 'BAAK',
+        //     'phone_number' => '081238827690',
+        // ]);
 
-        $user8 = User::create([
-            'name' => 'User 4',
-            'email' => 'wirayudhawijaya1@gmail.com',
-            'nip' => 555994,
-            'position' => 'Tendik',
-            'study_program_id' => $studyProgram1->id,
-            'initial' => 'YTA',
-            'role' => 'BAAK',
-            'phone_number' => '081238827607',
-        ]);
+        // $user8 = User::create([
+        //     'name' => 'User 4',
+        //     'email' => 'wirayudhawijaya1@gmail.com',
+        //     'nip' => 555994,
+        //     'position' => 'Tendik',
+        //     'study_program_id' => $studyProgram1->id,
+        //     'initial' => 'YTA',
+        //     'role' => 'BAAK',
+        //     'phone_number' => '081238827607',
+        // ]);
 
-        $user9 = User::create([
-            'name' => 'User 5',
-            'email' => 'wirayudhawijaya2@gmail.com',
-            'nip' => '555996',
-            'position' => 'Tendik',
-            'study_program_id' => $studyProgram1->id,
-            'initial' => 'WWW',
-            'role' => 'BAAK',
-            'phone_number' => '089621317672',
-        ]);
+        // $user9 = User::create([
+        //     'name' => 'User 5',
+        //     'email' => 'wirayudhawijaya2@gmail.com',
+        //     'nip' => '555996',
+        //     'position' => 'Tendik',
+        //     'study_program_id' => $studyProgram1->id,
+        //     'initial' => 'WWW',
+        //     'role' => 'BAAK',
+        //     'phone_number' => '089621317672',
+        // ]);
 
-        $user10 = User::create([
-            'name' => 'User 6',
-            'email' => 'wirayudhawijaya3@gmail.com',
-            'nip' => '555997',
-            'position' => 'Tendik',
-            'study_program_id' => $studyProgram1->id,
-            'initial' => 'WWE',
-            'role' => 'BAAK',
-            'phone_number' => '089621317673',
-        ]);
+        // $user10 = User::create([
+        //     'name' => 'User 6',
+        //     'email' => 'wirayudhawijaya3@gmail.com',
+        //     'nip' => '555997',
+        //     'position' => 'Tendik',
+        //     'study_program_id' => $studyProgram1->id,
+        //     'initial' => 'WWE',
+        //     'role' => 'BAAK',
+        //     'phone_number' => '089621317673',
+        // ]);
 
-        $user14 = User::create([
-            'name' => 'User 6',
-            'email' => 'sn30052002@gmail.com',
-            'nip' => '555778',
-            'position' => 'Tendik',
-            'study_program_id' => $studyProgram1->id,
-            'initial' => 'KBS',
-            'role' => 'Kabag',
-            'phone_number' => '089621817673',
-        ]);
+        // $user14 = User::create([
+        //     'name' => 'User 6',
+        //     'email' => 'sn30052002@gmail.com',
+        //     'nip' => '555778',
+        //     'position' => 'Tendik',
+        //     'study_program_id' => $studyProgram1->id,
+        //     'initial' => 'KBS',
+        //     'role' => 'Kabag',
+        //     'phone_number' => '089621817673',
+        // ]);
 
-        $user15 = User::create([
-            'name' => 'RT User',
-            'email' => 'apaaja@gmail.com',
-            'nip' => '555723',
-            'position' => 'Rumah Tangga',
-            'study_program_id' => $studyProgram1->id,
-            'initial' => 'UUU',
-            'role' => 'Staff',
-            'phone_number' => '081238827608',
-        ]);
+        // $user15 = User::create([
+        //     'name' => 'RT User',
+        //     'email' => 'apaaja@gmail.com',
+        //     'nip' => '555723',
+        //     'position' => 'Rumah Tangga',
+        //     'study_program_id' => $studyProgram1->id,
+        //     'initial' => 'UUU',
+        //     'role' => 'Staff',
+        //     'phone_number' => '081238827608',
+        // ]);
 
 
 
-        $user11 = User::create([
-            'name' => 'User 7',
-            'email' => 'wirayudhawijaya4@gmail.com',
-            'nip' => '555998',
-            'position' => 'Tendik',
-            'study_program_id' => $studyProgram1->id,
-            'initial' => 'WWR',
-            'role' => 'BAAK',
-            'phone_number' => '089621317674',
-        ]);
+        // $user11 = User::create([
+        //     'name' => 'User 7',
+        //     'email' => 'wirayudhawijaya4@gmail.com',
+        //     'nip' => '555998',
+        //     'position' => 'Tendik',
+        //     'study_program_id' => $studyProgram1->id,
+        //     'initial' => 'WWR',
+        //     'role' => 'BAAK',
+        //     'phone_number' => '089621317674',
+        // ]);
 
-        $user12 = User::create([
-            'name' => 'User 8',
-            'email' => 'wirayudhawijaya5@gmail.com',
-            'nip' => '555999',
-            'position' => 'Tendik',
-            'study_program_id' => $studyProgram1->id,
-            'initial' => 'WWT',
-            'role' => 'BAAK',
-            'phone_number' => '089621317675',
-        ]);
+        // $user12 = User::create([
+        //     'name' => 'User 8',
+        //     'email' => 'wirayudhawijaya5@gmail.com',
+        //     'nip' => '555999',
+        //     'position' => 'Tendik',
+        //     'study_program_id' => $studyProgram1->id,
+        //     'initial' => 'WWT',
+        //     'role' => 'BAAK',
+        //     'phone_number' => '089621317675',
+        // ]);
 
-        $user13 = User::create([
-            'name' => 'User 9',
-            'email' => 'wirayudhawijaya6@gmail.com',
-            'nip' => '555910',
-            'position' => 'Tendik',
-            'study_program_id' => $studyProgram1->id,
-            'initial' => 'WWY',
-            'role' => 'BAAK',
-            'phone_number' => '089621317679',
-        ]);
+        // $user13 = User::create([
+        //     'name' => 'User 9',
+        //     'email' => 'wirayudhawijaya6@gmail.com',
+        //     'nip' => '555910',
+        //     'position' => 'Tendik',
+        //     'study_program_id' => $studyProgram1->id,
+        //     'initial' => 'WWY',
+        //     'role' => 'BAAK',
+        //     'phone_number' => '089621317679',
+        // ]);
 
-        $user2 = User::create([
-            'name' => 'Kabag Ahmad',
-            'email' => 'ahmadfadhil2003@gmail.com',
-            'nip' => '122334',
-            'position' => 'Dosen',
-            'study_program_id' => $studyProgram1->id,
-            'initial' => 'AFW',
-            'role' => 'Staff',
-            'phone_number' => null,
-        ]);
+        // $user2 = User::create([
+        //     'name' => 'Kabag Ahmad',
+        //     'email' => 'ahmadfadhil2003@gmail.com',
+        //     'nip' => '122334',
+        //     'position' => 'Dosen',
+        //     'study_program_id' => $studyProgram1->id,
+        //     'initial' => 'AFW',
+        //     'role' => 'Staff',
+        //     'phone_number' => null,
+        // ]);
 
-        $user3 = User::create([
-            'name' => 'Sarah Nabilah',
-            'email' => 'sarahnabilahputri@gmail.com',
-            'nip' => '122222',
-            'position' => 'Tendik',
-            'study_program_id' => $studyProgram1->id,
-            'initial' => 'MGY',
-            'role' => 'BAAK',
-            'phone_number' => null,
-        ]);
+        // $user3 = User::create([
+        //     'name' => 'Sarah Nabilah',
+        //     'email' => 'sarahnabilahputri@gmail.com',
+        //     'nip' => '122222',
+        //     'position' => 'Tendik',
+        //     'study_program_id' => $studyProgram1->id,
+        //     'initial' => 'MGY',
+        //     'role' => 'BAAK',
+        //     'phone_number' => null,
+        // ]);
 
-        $user4 = User::create([
-            'name' => 'Sarah Nabilah Putri',
-            'email' => 'sarah21si@mahasiswa.pcr.ac.id',
-            'nip' => '133333',
-            'position' => 'Tendik',
-            'study_program_id' => $studyProgram1->id,
-            'initial' => 'SRB',
-            'role' => 'BAAK',
-            'phone_number' => null,
-        ]);
+        // $user4 = User::create([
+        //     'name' => 'Sarah Nabilah Putri',
+        //     'email' => 'sarah21si@mahasiswa.pcr.ac.id',
+        //     'nip' => '133333',
+        //     'position' => 'Tendik',
+        //     'study_program_id' => $studyProgram1->id,
+        //     'initial' => 'SRB',
+        //     'role' => 'BAAK',
+        //     'phone_number' => null,
+        // ]);
 
-        $user7 = User::create([
-            'name' => 'Mingyu Sarah',
-            'email' => 'sarahmingyu@gmail.com',
-            'nip' => 555988,
-            'position' => 'Rumah Tangga',
-            'study_program_id' => $studyProgram1->id,
-            'initial' => 'SNP',
-            'role' => 'Staff',
-            'phone_number' => '089621317671',
-        ]);
+        // $user7 = User::create([
+        //     'name' => 'Mingyu Sarah',
+        //     'email' => 'sarahmingyu@gmail.com',
+        //     'nip' => 555988,
+        //     'position' => 'Rumah Tangga',
+        //     'study_program_id' => $studyProgram1->id,
+        //     'initial' => 'SNP',
+        //     'role' => 'Staff',
+        //     'phone_number' => '089621317671',
+        // ]);
 
 
         CheckoutCart::create([
