@@ -178,7 +178,7 @@ class UserController extends Controller
             // Retrieve validated data
             $data = $validator->validated();
 
-            if (($data['position'] ?? null) !== 'Staff') {
+            if (($data['position'] ?? null) !== 'Rumah Tangga') {
                 $data['phone_number'] = null;
             }
 
